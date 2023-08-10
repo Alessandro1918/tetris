@@ -8,6 +8,23 @@ const yellow = "\x1b[33m"
 const blue = "\x1b[34m"
 const colors = [white, red, green, yellow, blue]
 
+const pieces = [
+  {color: 1, coords: [[0, 0], [0, 1]]},
+  {color: 2, coords: [[1, 1], [1, 2]]},
+  {color: 3, coords: [[2, 2], [2, 3]]},
+  {color: 4, coords: [[3, 3], [3, 4]]}
+]
+
+//(Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
+//Once said set is empty, it's refilled with the original pieces available)
+let remainingPieces = []
+function resetRemaingPieces() {
+  remainingPieces = [0, 1, 2, 3]
+}
+resetRemaingPieces()
+
+let fallingPiece = {}
+
 //Init screen
 const screen = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -55,4 +72,46 @@ function printBoard() {
   }
 }
 
+//Get a random integer between two values
+//The maximum is exclusive and the minimum is inclusive
+function getRandomInt() {
+  min = 0
+  max = pieces.length
+  return Math.floor(Math.random() * (max - min) + min)
+}
+
+//Sort a new piece from the pool of remaining pieces
+function spawn() {
+
+  let pieceColor = 9   // a color that doesn't exist
+  while (remainingPieces.indexOf(pieceColor) < 0) {
+    pieceColor = getRandomInt()
+  }
+  fallingPiece = pieces[pieceColor]
+
+  //Remove piece from the pool of remaining pieces
+  const filtered = remainingPieces.filter(e => e != pieceColor)
+  remainingPieces = [...filtered]
+  if (remainingPieces.length == 0) {
+    resetRemaingPieces()
+  }
+
+  //For each cell of the piece, add it on the screen
+  fallingPiece.coords.forEach((e, i) => {
+    const line = e[0]
+    const row = e[1]
+    screen[line][row] = fallingPiece.color
+  })
+}
+
 printBoard()
+
+const timer = setInterval(() => {
+
+  spawn()
+  
+  // process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
+  // process.stdout.clearLine(1)                     //clear from cursor to end
+  printBoard()
+
+}, 1000)
