@@ -4,6 +4,7 @@
 
 const SCREEN_WIDTH = 10     //number of collumns
 const SCREEN_LENGTH = 20    //number of rows
+const SPAWN_ZONE_LENGTH = 2 //how many rows of the already defined screen will be used to spawn pieces
 
 const white = "\x1b[0m"
 const red = "\x1b[31m"
@@ -17,19 +18,22 @@ const colors = [white, red, green, yellow, blue]
 const pieces = [
   {color: 1, coords: [[0, 0], [0, 1], [0, 2], [1, 1]]},
   {color: 2, coords: [[0, 1], [0, 2], [1, 2], [1, 3]]},
-  {color: 3, coords: [[2, 2], [2, 3]]},
-  {color: 4, coords: [[3, 3], [3, 4]]}
+  {color: 3, coords: [[1, 2], [1, 3]]},
+  {color: 4, coords: [[1, 3], [1, 4]]}
 ]
 
-//(Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
-//Once said set is empty, it's refilled with the original pieces available)
+//Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
+//Once said set is empty, it's refilled with the original pieces available
 let remainingPieces = []
 function resetRemaingPieces() {
   remainingPieces = [0, 1, 2, 3]
 }
 resetRemaingPieces()
 
-let fallingPiece = {}
+let fallingPiece = {
+  color: 0, 
+  coords: []
+}
 
 //Init screen
 const screen = [
@@ -73,8 +77,7 @@ const screen = [
 function getRandomInt() {
   min = 0
   max = pieces.length
-  // return Math.floor(Math.random() * (max - min) + min)
-  return 0
+  return Math.floor(Math.random() * (max - min) + min)
 }
 
 //Finds an array ([0, 0]) in a 2D array ([[0, 0], [1, 1]])
@@ -92,9 +95,20 @@ function isArrayIn2DArray(cell, array) {
 }
 
 //Check if piece can move 1 row down
-function isSpaceAvailable(array) {
+function isSpaceAvailable(piece) {
+
+  //Get every cell below each failingPiece cell, not counting cells from the bottom row of failingPiece
+  const cells = []
+  piece.coords.forEach(e => {
+    const cell = [e[0]+1, e[1]]
+    if (!isArrayIn2DArray(cell, piece.coords)) {
+      cells.push(cell)
+    }
+  })
+
+  //If even a single cell is not empty, piece can't move down
   let isAvailable = true
-  array.forEach((e) => {
+  cells.forEach((e) => {
     if (screen[e[0]][e[1]]) {
       isAvailable = false
     }
@@ -108,14 +122,28 @@ function isSpaceAvailable(array) {
 
 //Print the board, cell by cell.
 function printBoard() {
-  process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
-  process.stdout.clearLine(1)                     //clear from cursor to end
-  for (var i = 0; i < SCREEN_LENGTH; i++) {       //i: row counter
-    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: collumn counter
-      if (screen[i][j]) {
-        process.stdout.write(colors[screen[i][j]] + "██" + white)
+  //moves cursor up "n" lines:
+  process.stdout.moveCursor(0, -SCREEN_LENGTH)                    //debug: print SPAWN_ZONE_LENGTH rows
+  // process.stdout.moveCursor(0, -(SCREEN_LENGTH-SPAWN_ZONE_LENGTH))   //prod: don't print it
+  process.stdout.clearLine(1)                                        //clear from cursor to end
+  
+  //i: row counter
+  //j: collumn counter
+  for (var i = 0; i < SCREEN_LENGTH; i++) {                       //debug      
+  // for (var i = SPAWN_ZONE_LENGTH; i < SCREEN_LENGTH; i++) {          //prod
+    for (var j = 0; j < SCREEN_WIDTH; j++) {      
+      if (i < SPAWN_ZONE_LENGTH) {
+        if (screen[i][j]) {
+          process.stdout.write(colors[screen[i][j]] + "██" + white)
+        } else {
+          process.stdout.write("--")
+        }
       } else {
-        process.stdout.write("--")
+        if (screen[i][j]) {
+          process.stdout.write(colors[screen[i][j]] + "██" + white)
+        } else {
+          process.stdout.write("[]")
+        }
       }
     }
     process.stdout.write("\n")
@@ -130,7 +158,8 @@ function spawn() {
   while (remainingPieces.indexOf(pieceColor) < 0) {
     pieceColor = getRandomInt()
   }
-  fallingPiece = pieces[pieceColor]
+  // fallingPiece = pieces[pieceColor]        //shallow copy
+  fallingPiece = {...pieces[pieceColor]}      //deep copy
 
   //Remove piece from the pool of remaining pieces
   const filtered = remainingPieces.filter(e => e != pieceColor)
@@ -140,45 +169,53 @@ function spawn() {
   }
 
   //For each cell of the piece, add it on the screen
-  fallingPiece.coords.forEach((e, i) => {
+  fallingPiece.coords.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
+
+  //Check if piece can be moved down, or is game over
+  if (!isSpaceAvailable(fallingPiece)) {
+    clearInterval(timer)
+  }
 
   printBoard()
 }
 
-//Move the failingPiece 1 row down, if space is available
-function gravity() {
-
-  //Get every cell below each failingPiece cell, not counting cells from the bottom row of failingPiece
-  const cells = []
-  fallingPiece.coords.forEach((e, i) => {
-    const cell = [e[0]+1, e[1]]
-    if (!isArrayIn2DArray(cell, fallingPiece.coords)) {
-      cells.push(cell)
+//Check if bottom line of SPAWN_ZONE_LENGTH is not empty
+//(It will trigger a false positive while piece is still falling to open space; don't check this value immediately after piece move one row down)
+function isGameOver() {
+  let isOver = false
+    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: collumn counter
+      if (screen[SPAWN_ZONE_LENGTH-1][j]) {
+        isOver = true
+      }
     }
-  })
+  return isOver
+}
 
-  if (!isSpaceAvailable(cells)) return
+//Move the failingPiece 1 row down
+function gravity() {
 
   //Save fallingPiece new coords to aux array
   const newCoords = []
-  fallingPiece.coords.forEach((e, i) => {
+  fallingPiece.coords.forEach(e => {
     const newCoord = [e[0]+1, e[1]]
     newCoords.push(newCoord)
   })
 
   //Clear old coords
-  fallingPiece.coords.forEach((e, i) => {
+  fallingPiece.coords.forEach(e => {
     screen[e[0]][e[1]] = 0
   })
 
   //Update fallingPiece
   fallingPiece.coords = [...newCoords]
-  fallingPiece.coords.forEach((e, i) => {
+  fallingPiece.coords.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 }
+
+console.clear()
 
 printBoard()
 
@@ -186,8 +223,16 @@ spawn()
 
 const timer = setInterval(() => {
 
-  gravity()
-  
+  if (isSpaceAvailable(fallingPiece)) {
+    gravity()
+  } else {
+    if (isGameOver()) {
+      clearInterval(timer)
+    } else {
+      spawn()
+    }
+  }
+
   printBoard()
 
-}, 1000)
+}, 100)
