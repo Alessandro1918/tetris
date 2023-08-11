@@ -2,8 +2,8 @@
 // ***** Constanst *****
 // *********************
 
-const SCREEN_WIDTH = 10
-const SCREEN_LENGTH = 20
+const SCREEN_WIDTH = 10     //number of collumns
+const SCREEN_LENGTH = 20    //number of rows
 
 const white = "\x1b[0m"
 const red = "\x1b[31m"
@@ -56,12 +56,12 @@ const screen = [
 ]
 // const screen = []
 // for (var j = 0; j < SCREEN_LENGTH; j++) {
-//   const line = []
+//   const row = []
 //   for (var i = 0; i < SCREEN_WIDTH; i++) {
 //     const cell = 0
-//     line.push(cell)
+//     row.push(cell)
 //   }
-//   screen.push(line)
+//   screen.push(row)
 // }
 
 // ******************************
@@ -110,10 +110,10 @@ function isSpaceAvailable(array) {
 function printBoard() {
   process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
   process.stdout.clearLine(1)                     //clear from cursor to end
-  for (var j = 0; j < SCREEN_LENGTH; j++) {
-    for (var i = 0; i < SCREEN_WIDTH; i++) {
-      if (screen[j][i]) {
-        process.stdout.write(colors[screen[j][i]] + "██" + white)
+  for (var i = 0; i < SCREEN_LENGTH; i++) {       //i: row counter
+    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: collumn counter
+      if (screen[i][j]) {
+        process.stdout.write(colors[screen[i][j]] + "██" + white)
       } else {
         process.stdout.write("--")
       }
@@ -141,9 +141,7 @@ function spawn() {
 
   //For each cell of the piece, add it on the screen
   fallingPiece.coords.forEach((e, i) => {
-    const line = e[0]
-    const row = e[1]
-    screen[line][row] = fallingPiece.color
+    screen[e[0]][e[1]] = fallingPiece.color
   })
 
   printBoard()
