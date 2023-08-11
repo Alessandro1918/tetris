@@ -2,6 +2,14 @@
 
 ## 🚀 Projeto
 🚧 Em construção 🚧
+<div align="center">
+    <img 
+      src="github_assets/example.png" 
+      alt="example" 
+      title="example" 
+      width="85%"
+    />
+</div>
 
 ## 🗂️ Utilização
 
