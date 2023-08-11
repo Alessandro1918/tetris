@@ -108,6 +108,8 @@ function isSpaceAvailable(array) {
 
 //Print the board, cell by cell.
 function printBoard() {
+  process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
+  process.stdout.clearLine(1)                     //clear from cursor to end
   for (var j = 0; j < SCREEN_LENGTH; j++) {
     for (var i = 0; i < SCREEN_WIDTH; i++) {
       if (screen[j][i]) {
@@ -143,6 +145,8 @@ function spawn() {
     const row = e[1]
     screen[line][row] = fallingPiece.color
   })
+
+  printBoard()
 }
 
 //Move the failingPiece 1 row down, if space is available
@@ -182,14 +186,10 @@ printBoard()
 
 spawn()
 
-printBoard()
-
 const timer = setInterval(() => {
 
   gravity()
   
-  // process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
-  // process.stdout.clearLine(1)                     //clear from cursor to end
   printBoard()
 
 }, 1000)
