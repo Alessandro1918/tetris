@@ -11,22 +11,28 @@ const red = "\x1b[31m"
 const green = "\x1b[32m"
 const yellow = "\x1b[33m"
 const blue = "\x1b[34m"
-const colors = [white, red, green, yellow, blue]
+const purple = "\x1b[35m"
+const cyan = "\x1b[36m"
+const orange = white        //ANSI sequences don't support "orange"
+const colors = [white, red, green, yellow, blue, purple, cyan, orange]
 
 //color: index of "colors" array
 //coords: XY pair. [0, 0] is "top-left", [0, MAX] is "top-right", etc.
 const pieces = [
-  {color: 1, coords: [[0, 0], [0, 1], [0, 2], [1, 1]]},
-  {color: 2, coords: [[0, 1], [0, 2], [1, 2], [1, 3]]},
-  {color: 3, coords: [[1, 2], [1, 3]]},
-  {color: 4, coords: [[1, 3], [1, 4]]}
+  {color: 6, coords: [[1, 3], [1, 4], [1, 5], [1, 6]], rotationAxisIndex: 3, orientation: 0},  //I tetromino (cyan)
+  {color: 3, coords: [[0, 4], [0, 5], [1, 4], [1, 5]], rotationAxisIndex: 0, orientation: 0},  //O tetromino (yellow)
+  {color: 2, coords: [[0, 5], [0, 6], [1, 4], [1, 5]], rotationAxisIndex: 0, orientation: 0},  //S tetromino (green)
+  {color: 1, coords: [[0, 4], [0, 5], [1, 5], [1, 6]], rotationAxisIndex: 1, orientation: 0},  //Z tetromino (red)
+  {color: 4, coords: [[0, 4], [0, 5], [0, 6], [1, 6]], rotationAxisIndex: 1, orientation: 0},  //J tetromino (blue)
+  {color: 7, coords: [[0, 4], [0, 5], [0, 6], [1, 4]], rotationAxisIndex: 1, orientation: 0},  //L tetromino (orange)
+  {color: 5, coords: [[0, 4], [0, 5], [0, 6], [1, 5]], rotationAxisIndex: 1, orientation: 0},  //T tetromino (purple)
 ]
 
 //Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
 //Once said set is empty, it's refilled with the original pieces available
 let remainingPieces = []
 function resetRemaingPieces() {
-  remainingPieces = [0, 1, 2, 3]
+  remainingPieces = [0, 1, 2, 3, 4, 5, 6]
 }
 resetRemaingPieces()
 
