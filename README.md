@@ -1,4 +1,7 @@
 # tetris
+![](https://sloc.xyz/github/Alessandro1918/tetris/)
+![](https://sloc.xyz/github/Alessandro1918/tetris?category=code)
+![](https://sloc.xyz/github/Alessandro1918/tetris?category=comments)
 
 ## 🚀 Projeto
 🚧 Em construção 🚧
