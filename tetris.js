@@ -19,17 +19,18 @@ const cyan = "\x1b[36m"
 const orange = white        //ANSI sequences don't support "orange"
 const colors = [white, cyan, yellow, green, red, blue, orange, purple]
 
-//color: index of "colors" array
-//coords: XY pair. [0, 0] is "top-left", [0, MAX] is "top-right", etc.
+//color: index of "colors" array.
+//tiles: array of [X, Y] coordinates of each tile of the piece on the screen. [0, 0] is "screen top-left", [0, MAX] is "screen top-right", etc.
+//orientation: how many degrees the piece is turned since it's spawn (90, 180, 270, or 360=0).
 const pieces = [
   {},                                                                    //Empty space (white)
-  {color: 1, coords: [[2, 3], [2, 4], [2, 5], [2, 6]], orientation: 0},  //I tetromino (cyan)
-  {color: 2, coords: [[1, 4], [1, 5], [2, 4], [2, 5]], orientation: 0},  //O tetromino (yellow)
-  {color: 3, coords: [[1, 5], [1, 6], [2, 4], [2, 5]], orientation: 0},  //S tetromino (green)
-  {color: 4, coords: [[1, 4], [1, 5], [2, 5], [2, 6]], orientation: 0},  //Z tetromino (red)
-  {color: 5, coords: [[1, 4], [1, 5], [1, 6], [2, 6]], orientation: 0},  //J tetromino (blue)
-  {color: 6, coords: [[1, 4], [1, 5], [1, 6], [2, 4]], orientation: 0},  //L tetromino (orange)
-  {color: 7, coords: [[1, 4], [1, 5], [1, 6], [2, 5]], orientation: 0},  //T tetromino (purple)
+  {color: 1, tiles: [[2, 3], [2, 4], [2, 5], [2, 6]], orientation: 0},  //I tetromino (cyan)
+  {color: 2, tiles: [[1, 4], [1, 5], [2, 4], [2, 5]], orientation: 0},  //O tetromino (yellow)
+  {color: 3, tiles: [[1, 5], [1, 6], [2, 4], [2, 5]], orientation: 0},  //S tetromino (green)
+  {color: 4, tiles: [[1, 4], [1, 5], [2, 5], [2, 6]], orientation: 0},  //Z tetromino (red)
+  {color: 5, tiles: [[1, 4], [1, 5], [1, 6], [2, 6]], orientation: 0},  //J tetromino (blue)
+  {color: 6, tiles: [[1, 4], [1, 5], [1, 6], [2, 4]], orientation: 0},  //L tetromino (orange)
+  {color: 7, tiles: [[1, 4], [1, 5], [1, 6], [2, 5]], orientation: 0},  //T tetromino (purple)
 ]
 
 //Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
@@ -40,9 +41,10 @@ function resetRemaingPieces() {
 }
 resetRemaingPieces()
 
+//The piece currently on the move
 let fallingPiece = {
   color: 0, 
-  coords: [],
+  tiles: [],
   orientation: 0
 }
 
@@ -73,8 +75,8 @@ const screen = [
 // for (var j = 0; j < SCREEN_LENGTH; j++) {
 //   const row = []
 //   for (var i = 0; i < SCREEN_WIDTH; i++) {
-//     const cell = 0
-//     row.push(cell)
+//     const tile = 0
+//     row.push(tile)
 //   }
 //   screen.push(row)
 // }
@@ -92,13 +94,13 @@ function getRandomInt() {
   return Math.floor(Math.random() * (max - min) + min)
 }
 
-//Finds an array ([0, 0]) in a 2D array ([[0, 0], [1, 1]])
-function isArrayIn2DArray(cell, array) {
+//Finds an 1D array ([0, 0]) in a 2D array ([[0, 0], [1, 1]])
+function isArrayIn2DArray(oneDimArray, twoDimArray) {
   let isInArray = false
-  array.forEach((e) => {
+  twoDimArray.forEach((e) => {
     if (
-      e[0] === cell[0] &&
-      e[1] === cell[1]
+      e[0] === oneDimArray[0] &&
+      e[1] === oneDimArray[1]
     ) {
       isInArray = true
     }
@@ -109,18 +111,18 @@ function isArrayIn2DArray(cell, array) {
 //Check if piece can move 1 row down
 function isSpaceAvailable(piece) {
 
-  //Get every cell below each failingPiece cell, not counting cells from the bottom row of failingPiece
-  const cells = []
-  piece.coords.forEach(e => {
-    const cell = [e[0]+1, e[1]]
-    if (!isArrayIn2DArray(cell, piece.coords)) {
-      cells.push(cell)
+  //Get every tile below each failingPiece tile, not counting tiles from the bottom row of failingPiece
+  const tiles = []
+  piece.tiles.forEach(e => {
+    const tile = [e[0]+1, e[1]]
+    if (!isArrayIn2DArray(tile, piece.tiles)) {
+      tiles.push(tile)
     }
   })
 
-  //If even a single cell is not empty, piece can't move down
+  //If even a single tile is not empty, piece can't move down
   let isAvailable = true
-  cells.forEach((e) => {
+  tiles.forEach((e) => {
     if (screen[e[0]][e[1]]) {
       isAvailable = false
     }
@@ -132,7 +134,7 @@ function isSpaceAvailable(piece) {
 // ***** Game functions *****
 // **************************
 
-//Print the board, cell by cell.
+//Print the board, tile by tile.
 function printBoard() {
   //moves cursor up "n" lines:
   process.stdout.moveCursor(0, -SCREEN_LENGTH)                    //debug: print SPAWN_ZONE_LENGTH rows
@@ -180,8 +182,8 @@ function spawn() {
     resetRemaingPieces()
   }
 
-  //For each cell of the piece, add it on the screen
-  fallingPiece.coords.forEach(e => {
+  //For each tile of the piece, add it on the screen
+  fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 
@@ -217,58 +219,58 @@ function rotateClockwise() {
 
   //For the full example: https://tetris.wiki/Nintendo_Rotation_System
 
-  const c = fallingPiece.coords
-  const newCoords = []
+  const c = fallingPiece.tiles
+  const newTiles = []
   
-  //Clear old coords
-  fallingPiece.coords.forEach(e => {
+  //Clear old tiles
+  fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = 0
   })
   
-  //Get new coords
+  //Get new tiles
   switch (fallingPiece.color) {
 
     case 1:   //I tetromino
       if (fallingPiece.orientation % 180 == 0) {
-        newCoords.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]+1], [c[2][0]+1, c[2][1]], [c[3][0]+2, c[3][1]-1])
+        newTiles.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]+1], [c[2][0]+1, c[2][1]], [c[3][0]+2, c[3][1]-1])
       } else {
-        newCoords.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]-1], [c[2][0]-1, c[2][1]], [c[3][0]-2, c[3][1]+1])
+        newTiles.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]-1], [c[2][0]-1, c[2][1]], [c[3][0]-2, c[3][1]+1])
       }
       break
     
     case 2:   //O tetromino
-      newCoords.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0], c[3][1]])
+      newTiles.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0], c[3][1]])
       break
     
     case 3:   //S tetromino
       if (fallingPiece.orientation % 180 == 0) {
-        newCoords.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]-2, c[2][1]+1], [c[3][0], c[3][1]+1])
+        newTiles.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]-2, c[2][1]+1], [c[3][0], c[3][1]+1])
       } else {
-        newCoords.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]+2, c[2][1]-1], [c[3][0], c[3][1]-1])
+        newTiles.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]+2, c[2][1]-1], [c[3][0], c[3][1]-1])
       }
       break
     
     case 4:   //Z tetromino
       if (fallingPiece.orientation % 180 == 0) {
-        newCoords.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]-1, c[3][1]])
+        newTiles.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]-1, c[3][1]])
       } else {
-        newCoords.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]+1, c[3][1]])
+        newTiles.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]+1, c[3][1]])
       }
       break
     
     case 5:   //J tetromino
       switch (fallingPiece.orientation / 90 % 4) {
         case 0:
-          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]-2])
+          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]-2])
           break
         case 1:
-          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-2, c[3][1]])
+          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-2, c[3][1]])
           break
         case 2:
-          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]+2])
+          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]+2])
           break
         case 3:
-          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+2, c[3][1]])
+          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+2, c[3][1]])
           break
       }
       break
@@ -276,16 +278,16 @@ function rotateClockwise() {
     case 6:   //L tetromino
       switch (fallingPiece.orientation / 90 % 4) {
         case 0:
-          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-2, c[3][1]])
+          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-2, c[3][1]])
           break
         case 1:
-          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]+2])
+          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]+2])
           break
         case 2:
-          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+2, c[3][1]])
+          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+2, c[3][1]])
           break
         case 3:
-          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]-2])
+          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]-2])
           break
       }
       break
@@ -293,28 +295,28 @@ function rotateClockwise() {
     case 7:   //T tetromino
       switch (fallingPiece.orientation / 90 % 4) {
         case 0:
-          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-1, c[3][1]-1])
+          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-1, c[3][1]-1])
           break
         case 1:
-          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-1, c[3][1]+1])
+          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-1, c[3][1]+1])
           break
         case 2:
-          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+1, c[3][1]+1])
+          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+1, c[3][1]+1])
           break
         case 3:
-          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+1, c[3][1]-1])
+          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+1, c[3][1]-1])
           break
       }
       break
   }
 
-  //Update fallingPiece and screen with new coords
+  //Update fallingPiece and screen with new tiles
   fallingPiece = {
     ...fallingPiece, 
-    coords: newCoords, 
+    tiles: newTiles, 
     orientation: fallingPiece.orientation + 90
   }
-  newCoords.forEach(e => {
+  newTiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 
@@ -336,21 +338,21 @@ function isGameOver() {
 //Move the failingPiece 1 row down
 function gravity() {
 
-  //Save fallingPiece new coords to aux array
-  const newCoords = []
-  fallingPiece.coords.forEach(e => {
+  //Save fallingPiece new tiles to aux array
+  const newTiles = []
+  fallingPiece.tiles.forEach(e => {
     const newCoord = [e[0]+1, e[1]]
-    newCoords.push(newCoord)
+    newTiles.push(newCoord)
   })
 
-  //Clear old coords
-  fallingPiece.coords.forEach(e => {
+  //Clear old tiles
+  fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = 0
   })
 
   //Update fallingPiece
-  fallingPiece.coords = [...newCoords]
-  fallingPiece.coords.forEach(e => {
+  fallingPiece.tiles = [...newTiles]
+  fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 }
