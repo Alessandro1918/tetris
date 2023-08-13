@@ -1,10 +1,13 @@
+require("readline").emitKeypressEvents(process.stdin)   //makes process.stdin emit keypress events
+process.stdin.setRawMode(true)                          //emit event on a per char base, instead of per enter key press
+
 // *********************
 // ***** Constanst *****
 // *********************
 
 const SCREEN_WIDTH = 10     //number of collumns
 const SCREEN_LENGTH = 20    //number of rows
-const SPAWN_ZONE_LENGTH = 2 //how many rows of the already defined screen will be used to spawn pieces
+const SPAWN_ZONE_LENGTH = 3 //how many rows of the already defined screen will be used to spawn pieces
 
 const white = "\x1b[0m"
 const red = "\x1b[31m"
@@ -14,18 +17,18 @@ const blue = "\x1b[34m"
 const purple = "\x1b[35m"
 const cyan = "\x1b[36m"
 const orange = white        //ANSI sequences don't support "orange"
-const colors = [white, red, green, yellow, blue, purple, cyan, orange]
+const colors = [white, cyan, yellow, green, red, blue, orange, purple]
 
 //color: index of "colors" array
 //coords: XY pair. [0, 0] is "top-left", [0, MAX] is "top-right", etc.
 const pieces = [
-  {color: 6, coords: [[1, 3], [1, 4], [1, 5], [1, 6]], rotationAxisIndex: 3, orientation: 0},  //I tetromino (cyan)
-  {color: 3, coords: [[0, 4], [0, 5], [1, 4], [1, 5]], rotationAxisIndex: 0, orientation: 0},  //O tetromino (yellow)
-  {color: 2, coords: [[0, 5], [0, 6], [1, 4], [1, 5]], rotationAxisIndex: 0, orientation: 0},  //S tetromino (green)
-  {color: 1, coords: [[0, 4], [0, 5], [1, 5], [1, 6]], rotationAxisIndex: 1, orientation: 0},  //Z tetromino (red)
-  {color: 4, coords: [[0, 4], [0, 5], [0, 6], [1, 6]], rotationAxisIndex: 1, orientation: 0},  //J tetromino (blue)
-  {color: 7, coords: [[0, 4], [0, 5], [0, 6], [1, 4]], rotationAxisIndex: 1, orientation: 0},  //L tetromino (orange)
-  {color: 5, coords: [[0, 4], [0, 5], [0, 6], [1, 5]], rotationAxisIndex: 1, orientation: 0},  //T tetromino (purple)
+  {color: 1, coords: [[2, 3], [2, 4], [2, 5], [2, 6]], orientation: 0},  //I tetromino (cyan)
+  {color: 2, coords: [[1, 4], [1, 5], [2, 4], [2, 5]], orientation: 0},  //O tetromino (yellow)
+  {color: 3, coords: [[1, 5], [1, 6], [2, 4], [2, 5]], orientation: 0},  //S tetromino (green)
+  {color: 4, coords: [[1, 4], [1, 5], [2, 5], [2, 6]], orientation: 0},  //Z tetromino (red)
+  {color: 5, coords: [[1, 4], [1, 5], [1, 6], [2, 6]], orientation: 0},  //J tetromino (blue)
+  {color: 6, coords: [[1, 4], [1, 5], [1, 6], [2, 4]], orientation: 0},  //L tetromino (orange)
+  {color: 7, coords: [[1, 4], [1, 5], [1, 6], [2, 5]], orientation: 0},  //T tetromino (purple)
 ]
 
 //Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
@@ -38,7 +41,8 @@ resetRemaingPieces()
 
 let fallingPiece = {
   color: 0, 
-  coords: []
+  coords: [],
+  orientation: 0
 }
 
 //Init screen
@@ -83,6 +87,7 @@ const screen = [
 function getRandomInt() {
   min = 0
   max = pieces.length
+  // return 0
   return Math.floor(Math.random() * (max - min) + min)
 }
 
@@ -187,6 +192,134 @@ function spawn() {
   printBoard()
 }
 
+//Read key press
+process.stdin.on("keypress", (char, event) => {
+  if (char === "w") rotateClockwise()
+  if (char === "c") process.exit()
+})
+
+function rotateClockwise() {
+  //0 degrees:
+  //I:			//O:		   //S:		 	//Z:		 //J:		  //L:		   //T:
+  // -- -- -- --  //-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
+  // -- -- -- --  //-- ██ ██ --  // -- ██ ██  // ██ ██ --  // ██ ██ ██  // ██ ██ ██  // ██ ██ ██
+  // ██ ██ ██ ██  //-- ██ ██ --  // ██ ██ --  // -- ██ ██  // -- -- ██  // ██ -- --  // -- ██ --
+  // [] [] [] []  //[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
+  // [] [] [] []  //[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
+
+  //+90 CW:
+  // -- -- -- --	//-- -- -- --  // -- ██ --  // -- -- ██  // -- ██ --  // ██ ██ --  // -- ██ --
+  // -- -- ██ --	//-- ██ ██ --  // -- ██ ██  // -- ██ ██  // -- ██ --  // -- ██ --  // ██ ██ --
+  // -- -- ██ --	//-- ██ ██ --  // -- -- ██  // -- ██ --  // ██ ██ --  // -- ██ --  // -- ██ --
+  // [] [] ██ []	//[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
+  // [] [] ██ []	//[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
+
+  //For the full example: https://tetris.wiki/Nintendo_Rotation_System
+
+  const c = fallingPiece.coords
+  const newCoords = []
+  
+  //Clear old coords
+  fallingPiece.coords.forEach(e => {
+    screen[e[0]][e[1]] = 0
+  })
+  
+  //Get new coords
+  switch (fallingPiece.color) {
+
+    case 1:   //I tetromino
+      if (fallingPiece.orientation % 180 == 0) {
+        newCoords.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]+1], [c[2][0]+1, c[2][1]], [c[3][0]+2, c[3][1]-1])
+      } else {
+        newCoords.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]-1], [c[2][0]-1, c[2][1]], [c[3][0]-2, c[3][1]+1])
+      }
+      break
+    
+    case 2:   //O tetromino
+      newCoords.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0], c[3][1]])
+      break
+    
+    case 3:   //S tetromino
+      if (fallingPiece.orientation % 180 == 0) {
+        newCoords.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]-2, c[2][1]+1], [c[3][0], c[3][1]+1])
+      } else {
+        newCoords.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]+2, c[2][1]-1], [c[3][0], c[3][1]-1])
+      }
+      break
+    
+    case 4:   //Z tetromino
+      if (fallingPiece.orientation % 180 == 0) {
+        newCoords.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]-1, c[3][1]])
+      } else {
+        newCoords.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]+1, c[3][1]])
+      }
+      break
+    
+    case 5:   //J tetromino
+      switch (fallingPiece.orientation / 90 % 4) {
+        case 0:
+          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]-2])
+          break
+        case 1:
+          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-2, c[3][1]])
+          break
+        case 2:
+          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]+2])
+          break
+        case 3:
+          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+2, c[3][1]])
+          break
+      }
+      break
+
+    case 6:   //L tetromino
+      switch (fallingPiece.orientation / 90 % 4) {
+        case 0:
+          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-2, c[3][1]])
+          break
+        case 1:
+          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]+2])
+          break
+        case 2:
+          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+2, c[3][1]])
+          break
+        case 3:
+          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]-2])
+          break
+      }
+      break
+
+    case 7:   //T tetromino
+      switch (fallingPiece.orientation / 90 % 4) {
+        case 0:
+          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-1, c[3][1]-1])
+          break
+        case 1:
+          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-1, c[3][1]+1])
+          break
+        case 2:
+          newCoords.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+1, c[3][1]+1])
+          break
+        case 3:
+          newCoords.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+1, c[3][1]-1])
+          break
+      }
+      break
+  }
+
+  //Update fallingPiece and screen with new coords
+  fallingPiece = {
+    ...fallingPiece, 
+    coords: newCoords, 
+    orientation: fallingPiece.orientation + 90
+  }
+  newCoords.forEach(e => {
+    screen[e[0]][e[1]] = fallingPiece.color
+  })
+
+  printBoard()
+}
+
 //Check if bottom line of SPAWN_ZONE_LENGTH is not empty
 //(It will trigger a false positive while piece is still falling to open space; don't check this value immediately after piece move one row down)
 function isGameOver() {
@@ -234,6 +367,7 @@ const timer = setInterval(() => {
   } else {
     if (isGameOver()) {
       clearInterval(timer)
+      process.exit()
     } else {
       spawn()
     }
