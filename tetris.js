@@ -22,6 +22,7 @@ const colors = [white, cyan, yellow, green, red, blue, orange, purple]
 //color: index of "colors" array
 //coords: XY pair. [0, 0] is "top-left", [0, MAX] is "top-right", etc.
 const pieces = [
+  {},                                                                    //Empty space (white)
   {color: 1, coords: [[2, 3], [2, 4], [2, 5], [2, 6]], orientation: 0},  //I tetromino (cyan)
   {color: 2, coords: [[1, 4], [1, 5], [2, 4], [2, 5]], orientation: 0},  //O tetromino (yellow)
   {color: 3, coords: [[1, 5], [1, 6], [2, 4], [2, 5]], orientation: 0},  //S tetromino (green)
@@ -35,7 +36,7 @@ const pieces = [
 //Once said set is empty, it's refilled with the original pieces available
 let remainingPieces = []
 function resetRemaingPieces() {
-  remainingPieces = [0, 1, 2, 3, 4, 5, 6]
+  remainingPieces = [1, 2, 3, 4, 5, 6, 7]
 }
 resetRemaingPieces()
 
@@ -85,8 +86,8 @@ const screen = [
 //Get a random integer between two values
 //The maximum is exclusive and the minimum is inclusive
 function getRandomInt() {
-  min = 0
-  max = pieces.length
+  min = 1
+  max = pieces.length +1
   // return 0
   return Math.floor(Math.random() * (max - min) + min)
 }
