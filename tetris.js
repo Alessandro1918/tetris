@@ -5,7 +5,7 @@ process.stdin.setRawMode(true)                          //emit event on a per ch
 // ***** Constanst *****
 // *********************
 
-const SCREEN_WIDTH = 10     //number of collumns
+const SCREEN_WIDTH = 10     //number of columns
 const SCREEN_LENGTH = 20    //number of rows
 
 const white = "\x1b[0m"
@@ -21,9 +21,10 @@ const colors = [white, cyan, yellow, green, red, blue, orange, purple]
 //color: index of "colors" array.
 //tiles: array of [X, Y] coordinates of each tile of the piece on the screen. [0, 0] is "screen top-left", [0, MAX] is "screen top-right", etc.
 //orientation: how many degrees the piece is turned since it's spawn (90, 180, 270, or 360=0).
+//Tetrominoes spawn with their highest block on row 20, axis of rotation on column 6: https://tetris.wiki/Original_Rotation_System
 const pieces = [
   {},                                                                   //Empty space (white)
-  {color: 1, tiles: [[1, 3], [1, 4], [1, 5], [1, 6]], orientation: 0},  //I tetromino (cyan)
+  {color: 1, tiles: [[0, 3], [0, 4], [0, 5], [0, 6]], orientation: 0},  //I tetromino (cyan)
   {color: 2, tiles: [[0, 4], [0, 5], [1, 4], [1, 5]], orientation: 0},  //O tetromino (yellow)
   {color: 3, tiles: [[0, 5], [0, 6], [1, 4], [1, 5]], orientation: 0},  //S tetromino (green)
   {color: 4, tiles: [[0, 4], [0, 5], [1, 5], [1, 6]], orientation: 0},  //Z tetromino (red)
@@ -139,7 +140,7 @@ function printBoard() {
   process.stdout.clearLine(1)                     //clear from cursor to end
   
   for (var i = 0; i < SCREEN_LENGTH; i++) {       //i: row counter
-    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: collumn counter 
+    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: column counter 
       if (screen[i][j]) {
         process.stdout.write(colors[screen[i][j]] + "██" + white)
       } else {
@@ -211,7 +212,7 @@ function rotateClockwise() {
   // -- -- ██ --	//-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
   // -- -- ██ --	//-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
 
-  //(Pictures of pieces at free-falling. Note that, because of the lack of space, they can't rotate immediately after spawning)
+  //(Pictures of pieces at free-falling, not immediately after spawning. Because of the lack of space, they can't rotate rigth after spawning)
   //For the full example: https://tetris.wiki/Nintendo_Rotation_System
 
   const c = fallingPiece.tiles
