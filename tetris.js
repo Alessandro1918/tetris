@@ -7,7 +7,6 @@ process.stdin.setRawMode(true)                          //emit event on a per ch
 
 const SCREEN_WIDTH = 10     //number of collumns
 const SCREEN_LENGTH = 20    //number of rows
-const SPAWN_ZONE_LENGTH = 3 //how many rows of the already defined screen will be used to spawn pieces
 
 const white = "\x1b[0m"
 const red = "\x1b[31m"
@@ -23,14 +22,14 @@ const colors = [white, cyan, yellow, green, red, blue, orange, purple]
 //tiles: array of [X, Y] coordinates of each tile of the piece on the screen. [0, 0] is "screen top-left", [0, MAX] is "screen top-right", etc.
 //orientation: how many degrees the piece is turned since it's spawn (90, 180, 270, or 360=0).
 const pieces = [
-  {},                                                                    //Empty space (white)
-  {color: 1, tiles: [[2, 3], [2, 4], [2, 5], [2, 6]], orientation: 0},  //I tetromino (cyan)
-  {color: 2, tiles: [[1, 4], [1, 5], [2, 4], [2, 5]], orientation: 0},  //O tetromino (yellow)
-  {color: 3, tiles: [[1, 5], [1, 6], [2, 4], [2, 5]], orientation: 0},  //S tetromino (green)
-  {color: 4, tiles: [[1, 4], [1, 5], [2, 5], [2, 6]], orientation: 0},  //Z tetromino (red)
-  {color: 5, tiles: [[1, 4], [1, 5], [1, 6], [2, 6]], orientation: 0},  //J tetromino (blue)
-  {color: 6, tiles: [[1, 4], [1, 5], [1, 6], [2, 4]], orientation: 0},  //L tetromino (orange)
-  {color: 7, tiles: [[1, 4], [1, 5], [1, 6], [2, 5]], orientation: 0},  //T tetromino (purple)
+  {},                                                                   //Empty space (white)
+  {color: 1, tiles: [[1, 3], [1, 4], [1, 5], [1, 6]], orientation: 0},  //I tetromino (cyan)
+  {color: 2, tiles: [[0, 4], [0, 5], [1, 4], [1, 5]], orientation: 0},  //O tetromino (yellow)
+  {color: 3, tiles: [[0, 5], [0, 6], [1, 4], [1, 5]], orientation: 0},  //S tetromino (green)
+  {color: 4, tiles: [[0, 4], [0, 5], [1, 5], [1, 6]], orientation: 0},  //Z tetromino (red)
+  {color: 5, tiles: [[0, 4], [0, 5], [0, 6], [1, 6]], orientation: 0},  //J tetromino (blue)
+  {color: 6, tiles: [[0, 4], [0, 5], [0, 6], [1, 4]], orientation: 0},  //L tetromino (orange)
+  {color: 7, tiles: [[0, 4], [0, 5], [0, 6], [1, 5]], orientation: 0},  //T tetromino (purple)
 ]
 
 //Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
@@ -136,35 +135,34 @@ function isSpaceAvailable(piece) {
 
 //Print the board, tile by tile.
 function printBoard() {
-  //moves cursor up "n" lines:
-  process.stdout.moveCursor(0, -SCREEN_LENGTH)                    //debug: print SPAWN_ZONE_LENGTH rows
-  // process.stdout.moveCursor(0, -(SCREEN_LENGTH-SPAWN_ZONE_LENGTH))   //prod: don't print it
-  process.stdout.clearLine(1)                                        //clear from cursor to end
+  process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
+  process.stdout.clearLine(1)                     //clear from cursor to end
   
-  //i: row counter
-  //j: collumn counter
-  for (var i = 0; i < SCREEN_LENGTH; i++) {                       //debug      
-  // for (var i = SPAWN_ZONE_LENGTH; i < SCREEN_LENGTH; i++) {          //prod
-    for (var j = 0; j < SCREEN_WIDTH; j++) {      
-      if (i < SPAWN_ZONE_LENGTH) {
-        if (screen[i][j]) {
-          process.stdout.write(colors[screen[i][j]] + "██" + white)
-        } else {
-          process.stdout.write("--")
-        }
+  for (var i = 0; i < SCREEN_LENGTH; i++) {       //i: row counter
+    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: collumn counter 
+      if (screen[i][j]) {
+        process.stdout.write(colors[screen[i][j]] + "██" + white)
       } else {
-        if (screen[i][j]) {
-          process.stdout.write(colors[screen[i][j]] + "██" + white)
-        } else {
-          process.stdout.write("[]")
-        }
+        process.stdout.write("--")
       }
     }
     process.stdout.write("\n")
   }
 }
 
+//Check if piece has screen space to spawn.
+function canSpawn(piece) {
+  let hasSpace = true
+  piece.tiles.forEach(e => {
+    if (screen[e[0]][e[1]]) {
+      hasSpace = false
+    }
+  })
+  return hasSpace
+}
+
 //Print a new piece on the board
+//Game overs can only be checked here, after new piece is selected (some could still fit in the remaining space, and even moved away)
 function spawn() {
 
   //Sort a new piece from the pool of remaining pieces
@@ -182,41 +180,38 @@ function spawn() {
     resetRemaingPieces()
   }
 
+  const canPieceSpawn = canSpawn(fallingPiece)
+
   //For each tile of the piece, add it on the screen
+  //Improvement opportunity: print just the fallingPiec bottom tiles, instead of overwrite the old piece currently in the spawn zone
   fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 
-  //Check if piece can be moved down, or is game over
-  if (!isSpaceAvailable(fallingPiece)) {
-    clearInterval(timer)
-  }
-
   printBoard()
-}
 
-//Read key press
-process.stdin.on("keypress", (char, event) => {
-  if (char === "w") rotateClockwise()
-  if (char === "c") process.exit()
-})
+  if (!canPieceSpawn) {
+    gameOver()
+  }
+}
 
 function rotateClockwise() {
   //0 degrees:
-  //I:			//O:		   //S:		 	//Z:		 //J:		  //L:		   //T:
+  //I:            //O:           //S:         //Z:         //J:         //L:         //T:
   // -- -- -- --  //-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
   // -- -- -- --  //-- ██ ██ --  // -- ██ ██  // ██ ██ --  // ██ ██ ██  // ██ ██ ██  // ██ ██ ██
   // ██ ██ ██ ██  //-- ██ ██ --  // ██ ██ --  // -- ██ ██  // -- -- ██  // ██ -- --  // -- ██ --
-  // [] [] [] []  //[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
-  // [] [] [] []  //[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
+  // -- -- -- --  //-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
+  // -- -- -- --  //-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
 
   //+90 CW:
   // -- -- -- --	//-- -- -- --  // -- ██ --  // -- -- ██  // -- ██ --  // ██ ██ --  // -- ██ --
   // -- -- ██ --	//-- ██ ██ --  // -- ██ ██  // -- ██ ██  // -- ██ --  // -- ██ --  // ██ ██ --
   // -- -- ██ --	//-- ██ ██ --  // -- -- ██  // -- ██ --  // ██ ██ --  // -- ██ --  // -- ██ --
-  // [] [] ██ []	//[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
-  // [] [] ██ []	//[] [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []  // [] [] []
+  // -- -- ██ --	//-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
+  // -- -- ██ --	//-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
 
+  //(Pictures of pieces at free-falling. Note that, because of the lack of space, they can't rotate immediately after spawning)
   //For the full example: https://tetris.wiki/Nintendo_Rotation_System
 
   const c = fallingPiece.tiles
@@ -323,18 +318,6 @@ function rotateClockwise() {
   printBoard()
 }
 
-//Check if bottom line of SPAWN_ZONE_LENGTH is not empty
-//(It will trigger a false positive while piece is still falling to open space; don't check this value immediately after piece move one row down)
-function isGameOver() {
-  let isOver = false
-    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: collumn counter
-      if (screen[SPAWN_ZONE_LENGTH-1][j]) {
-        isOver = true
-      }
-    }
-  return isOver
-}
-
 //Move the failingPiece 1 row down
 function gravity() {
 
@@ -357,6 +340,17 @@ function gravity() {
   })
 }
 
+function gameOver() {
+  clearInterval(timer)
+  process.exit()
+}
+
+//Read key press
+process.stdin.on("keypress", (char, event) => {
+  if (char === "w") rotateClockwise()
+  if (char === "c") process.exit()        //CTRL + C: stop script
+})
+
 console.clear()
 
 printBoard()
@@ -367,13 +361,8 @@ const timer = setInterval(() => {
 
   if (isSpaceAvailable(fallingPiece)) {
     gravity()
-  } else {
-    if (isGameOver()) {
-      clearInterval(timer)
-      process.exit()
-    } else {
-      spawn()
-    }
+  } else {     
+    spawn()
   }
 
   printBoard()
