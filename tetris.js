@@ -8,30 +8,51 @@ process.stdin.setRawMode(true)                          //emit event on a per ch
 const SCREEN_WIDTH = 10     //number of columns
 const SCREEN_LENGTH = 20    //number of rows
 
-const white = "\x1b[0m"
-const red = "\x1b[31m"
-const green = "\x1b[32m"
+const white =  "\x1b[0m"
+const red =    "\x1b[31m"
+const green =  "\x1b[32m"
 const yellow = "\x1b[33m"
-const blue = "\x1b[34m"
+const blue =   "\x1b[34m"
 const purple = "\x1b[35m"
-const cyan = "\x1b[36m"
+const cyan =   "\x1b[36m"
 const orange = white        //ANSI sequences don't support "orange"
-const colors = [white, cyan, yellow, green, red, blue, orange, purple]
 
-//color: index of "colors" array.
+//id: unique identifier; can be used to define the color in the "colors" array.
 //tiles: array of [X, Y] coordinates of each tile of the piece on the screen. [0, 0] is "screen top-left", [0, MAX] is "screen top-right", etc.
 //orientation: how many degrees the piece is turned since it's spawn (90, 180, 270, or 360=0).
 //Tetrominoes spawn with their highest block on row 20, axis of rotation on column 6: https://tetris.wiki/Original_Rotation_System
 const pieces = [
-  {},                                                                   //Empty space (white)
-  {color: 1, tiles: [[0, 3], [0, 4], [0, 5], [0, 6]], orientation: 0},  //I tetromino (cyan)
-  {color: 2, tiles: [[0, 4], [0, 5], [1, 4], [1, 5]], orientation: 0},  //O tetromino (yellow)
-  {color: 3, tiles: [[0, 5], [0, 6], [1, 4], [1, 5]], orientation: 0},  //S tetromino (green)
-  {color: 4, tiles: [[0, 4], [0, 5], [1, 5], [1, 6]], orientation: 0},  //Z tetromino (red)
-  {color: 5, tiles: [[0, 4], [0, 5], [0, 6], [1, 6]], orientation: 0},  //J tetromino (blue)
-  {color: 6, tiles: [[0, 4], [0, 5], [0, 6], [1, 4]], orientation: 0},  //L tetromino (orange)
-  {color: 7, tiles: [[0, 4], [0, 5], [0, 6], [1, 5]], orientation: 0},  //T tetromino (purple)
+  {},                                                                //Empty space (white)
+  {id: 1, tiles: [[0, 3], [0, 4], [0, 5], [0, 6]], orientation: 0},  //I tetromino (cyan)
+  {id: 2, tiles: [[0, 4], [0, 5], [1, 4], [1, 5]], orientation: 0},  //O tetromino (yellow)
+  {id: 3, tiles: [[0, 5], [0, 6], [1, 4], [1, 5]], orientation: 0},  //S tetromino (green)
+  {id: 4, tiles: [[0, 4], [0, 5], [1, 5], [1, 6]], orientation: 0},  //Z tetromino (red)
+  {id: 5, tiles: [[0, 4], [0, 5], [0, 6], [1, 6]], orientation: 0},  //J tetromino (blue)
+  {id: 6, tiles: [[0, 4], [0, 5], [0, 6], [1, 4]], orientation: 0},  //L tetromino (orange)
+  {id: 7, tiles: [[0, 4], [0, 5], [0, 6], [1, 5]], orientation: 0},  //T tetromino (purple)
 ]
+
+//Render the game based on the CLI argument (ex: > node tetris.js color)
+const modes = {
+  "classic": {
+    tile: "[]",
+    space: " .",
+    leftBorder: "<!",
+    rigthBorder: "!>",
+    bottomBorder: "▽▽",
+    primaryColor: green,
+    colors: [green, green, green, green, green, green, green, green]
+  },
+  "color": {
+    tile: "██",
+    space: "  ",
+    leftBorder: "░░",
+    rigthBorder: "░░",
+    bottomBorder: "░░",
+    primaryColor: white,
+    colors: [white, cyan, yellow, green, red, blue, orange, purple]
+  }
+}
 
 //Pieces are not selected at random; instead, they are picked from a complete set, one by one. 
 //Once said set is empty, it's refilled with the original pieces available
@@ -112,21 +133,47 @@ function isArrayIn2DArray(oneDimArray, twoDimArray) {
 // ***** Game functions *****
 // **************************
 
+//Print a single tile.
+//If param "color" not mentioned, use mode's default color
+function printTile(tile, color) {
+  if (color === undefined) {
+    color = modes[selectedMode].primaryColor
+  }
+  process.stdout.write(
+    color +   //start piece color (ex: orange)
+    tile +    //print tile (ex: "██")
+    white     //reset terminal color back to white
+  )
+}
+
 //Print the board, tile by tile.
 function printBoard() {
-  process.stdout.moveCursor(0, -SCREEN_LENGTH)    //moves cursor up "n" lines
-  process.stdout.clearLine(1)                     //clear from cursor to end
+  process.stdout.moveCursor(0, -(SCREEN_LENGTH + 1))          //moves cursor up "n" lines
+  process.stdout.clearLine(1)                                 //clear from cursor to end
   
-  for (var i = 0; i < SCREEN_LENGTH; i++) {       //i: row counter
-    for (var j = 0; j < SCREEN_WIDTH; j++) {      //j: column counter 
+  for (var i = 0; i < SCREEN_LENGTH; i++) {                   //i: row counter
+    for (var j = 0; j < SCREEN_WIDTH; j++) {                  //j: column counter 
+      if (j == 0) {
+        printTile(modes[selectedMode].leftBorder)             //left border
+      }
       if (screen[i][j]) {
-        process.stdout.write(colors[screen[i][j]] + "██" + white)
+        printTile(                                            //piece tile
+          modes[selectedMode].tile,
+          modes[selectedMode].colors[[screen[i][j]]]
+        )
       } else {
-        process.stdout.write("--")
+        printTile(modes[selectedMode].space)                  //empty cell
+      }
+      if (j == SCREEN_WIDTH - 1) {
+        printTile(modes[selectedMode].rigthBorder)            //right border
       }
     }
-    process.stdout.write("\n")
+    process.stdout.write("\n")                                //end of line
   }
+  for (var j = 0; j < SCREEN_WIDTH + 2; j++) {
+    printTile(modes[selectedMode].bottomBorder)               //bottom border
+  }
+  process.stdout.write("\n")
 }
 
 //Check if piece has screen space to spawn.
@@ -145,15 +192,15 @@ function canSpawn(piece) {
 function spawn() {
 
   //Sort a new piece from the pool of remaining pieces
-  let pieceColor = 9   // a color that doesn't exist
-  while (remainingPieces.indexOf(pieceColor) < 0) {
-    pieceColor = getRandomInt()
+  let pieceId = 9   // a piece that doesn't exist
+  while (remainingPieces.indexOf(pieceId) < 0) {
+    pieceId = getRandomInt()
   }
-  // fallingPiece = pieces[pieceColor]        //shallow copy
-  fallingPiece = {...pieces[pieceColor]}      //deep copy
+  // fallingPiece = pieces[pieceId]        //shallow copy
+  fallingPiece = {...pieces[pieceId]}      //deep copy
 
   //Remove piece from the pool of remaining pieces
-  const filtered = remainingPieces.filter(e => e != pieceColor)
+  const filtered = remainingPieces.filter(e => e != pieceId)
   remainingPieces = [...filtered]
   if (remainingPieces.length == 0) {
     resetRemaingPieces()
@@ -164,7 +211,7 @@ function spawn() {
   //For each tile of the piece, add it on the screen
   //Improvement opportunity: print just the fallingPiece bottom tiles, instead of overwrite the old piece currently in the spawn zone
   fallingPiece.tiles.forEach(e => {
-    screen[e[0]][e[1]] = fallingPiece.color
+    screen[e[0]][e[1]] = fallingPiece.id
   })
 
   printBoard()
@@ -215,7 +262,7 @@ function rotateClockwise() {
   })
   
   //Get new tiles
-  switch (fallingPiece.color) {
+  switch (fallingPiece.id) {
 
     case 1:   //I tetromino
       if (fallingPiece.orientation % 180 == 0) {
@@ -304,7 +351,7 @@ function rotateClockwise() {
     orientation: fallingPiece.orientation + 90
   }
   fallingPiece.tiles.forEach(e => {
-    screen[e[0]][e[1]] = fallingPiece.color
+    screen[e[0]][e[1]] = fallingPiece.id
   })
 
   printBoard()
@@ -386,7 +433,7 @@ function move(direction) {
   //Update fallingPiece and screen with new tiles
   fallingPiece.tiles = [...newTiles]
   fallingPiece.tiles.forEach(e => {
-    screen[e[0]][e[1]] = fallingPiece.color
+    screen[e[0]][e[1]] = fallingPiece.id
   })
 
   printBoard()
@@ -397,12 +444,19 @@ process.stdin.on("keypress", (char, key) => {
   switch (key.name) {
     case "a":     if (canRotate("ccw"))   rotateCounterClockwise(); break;
     case "d":     if (canRotate("cw"))    rotateClockwise();        break;
+    case "up":    if (canRotate("cw"))    rotateClockwise();        break;
     case "left":  if (canMove("left"))    move("left");             break;
     case "right": if (canMove("right"))   move("right");            break;
     case "down":  if (canMove("down"))    move("down");             break;
     case "c":     if (key.ctrl)           process.exit();           break;  //CTRL + C: stop script
   }
 })
+
+// ***** Start! *****
+
+process.argv.length == 2
+  ? selectedMode = "classic"        //no arg provided, use default
+  : selectedMode = process.argv[2]  //use param provided by CLI
 
 console.clear()
 
