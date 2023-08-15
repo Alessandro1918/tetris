@@ -49,37 +49,37 @@ let fallingPiece = {
 }
 
 //Init screen
-const screen = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
-  [1, 1, 0, 2, 2, 3, 0, 4, 0, 0],
-  [1, 1, 2, 2, 0, 3, 4, 4, 4, 0],
-]
-// const screen = []
-// for (var j = 0; j < SCREEN_LENGTH; j++) {
-//   const row = []
-//   for (var i = 0; i < SCREEN_WIDTH; i++) {
-//     const tile = 0
-//     row.push(tile)
-//   }
-//   screen.push(row)
-// }
+// const screen = [
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+// ]
+const screen = []
+for (var i = 0; i < SCREEN_LENGTH; i++) {
+  const row = []
+  for (var j = 0; j < SCREEN_WIDTH; j++) {
+    const tile = 0
+    row.push(tile)
+  }
+  screen.push(row)
+}
 
 // ******************************
 // ***** Auxiliar functions *****
@@ -319,7 +319,37 @@ function rotateCounterClockwise() {
 //Check if failingPiece can be moved 1 unit at given direction
 function canMove(direction) {
 
-    return true
+  //Get every tile on the left of / on the rigth of / below each failingPiece tile,
+  //not counting tiles from the belonging to failingPiece
+  const newTiles = []
+  fallingPiece.tiles.forEach(e => {
+    let tile = []
+    switch (direction) {
+      case "left":  tile = [e[0], e[1]-1]; break;
+      case "right": tile = [e[0], e[1]+1]; break;
+      case "down":  tile = [e[0]+1, e[1]]; break;
+    }
+    if (!isArrayIn2DArray(tile, fallingPiece.tiles)) {
+      newTiles.push(tile)
+    }
+  })
+
+  let hasSpace = true
+
+  //If any new tile is off limits, piece can't move;
+  //If any new tile is on the screen, but not empty, piece can't move down;
+  newTiles.forEach(e => {
+    if (
+      [e[1]] < 0 || 
+      [e[1]] > SCREEN_WIDTH - 1 || 
+      [e[0]] > SCREEN_LENGTH - 1 ||
+      screen[e[0]][e[1]]
+    ) {
+      hasSpace = false
+    }
+  })
+
+  return hasSpace
 }
 
 //Move the failingPiece 1 unit at given direction
@@ -331,22 +361,19 @@ function move(direction) {
     
     case "left":
       fallingPiece.tiles.forEach(e => {
-        const newCoord = [e[0], e[1]-1]
-        newTiles.push(newCoord)
+        newTiles.push([e[0], e[1]-1])
       })
       break
     
     case "right":
       fallingPiece.tiles.forEach(e => {
-        const newCoord = [e[0]+1, e[1]+1]
-        newTiles.push(newCoord)
+        newTiles.push([e[0]+1, e[1]+1])
       })
       break
     
     case "down":
       fallingPiece.tiles.forEach(e => {
-        const newCoord = [e[0]+1, e[1]]
-        newTiles.push(newCoord)
+        newTiles.push([e[0]+1, e[1]])
       })
       break
   }

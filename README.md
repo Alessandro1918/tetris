@@ -10,7 +10,7 @@
       src="github_assets/example.png" 
       alt="example" 
       title="example" 
-      width="85%"
+      width="75%"
     />
 </div>
 
