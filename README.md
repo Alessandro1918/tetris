@@ -11,12 +11,8 @@
 ## 🚀 Projeto
 🚧 Em construção 🚧
 <div align="center">
-    <img 
-      src="github_assets/example.png" 
-      alt="example" 
-      title="example" 
-      width="75%"
-    />
+    <img src="github_assets/example_classic.png" alt="example" title="example" width="45%"/>
+    <img src="github_assets/example_color.png" alt="example" title="example" width="45%"/>
 </div>
 
 ## 🗂️ Utilização
@@ -30,8 +26,9 @@
 ### ▶️ Rodando o App:
 
 ```bash
-  $ cd tetris         # change to this directory
-  $ node tetris.js    # run the script
+  $ cd tetris               # change to this directory
+  $ node tetris.js          # run the script (default mode: classic)
+  $ node tetris.js color    # run the script (mode: color)
 ```
 
 ### 🎮 Controles:
