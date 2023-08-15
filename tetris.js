@@ -108,28 +108,6 @@ function isArrayIn2DArray(oneDimArray, twoDimArray) {
   return isInArray
 }
 
-//Check if piece can move 1 row down
-function isSpaceAvailable(piece) {
-
-  //Get every tile below each failingPiece tile, not counting tiles from the bottom row of failingPiece
-  const tiles = []
-  piece.tiles.forEach(e => {
-    const tile = [e[0]+1, e[1]]
-    if (!isArrayIn2DArray(tile, piece.tiles)) {
-      tiles.push(tile)
-    }
-  })
-
-  //If even a single tile is not empty, piece can't move down
-  let isAvailable = true
-  tiles.forEach((e) => {
-    if (screen[e[0]][e[1]]) {
-      isAvailable = false
-    }
-  })
-  return isAvailable
-}
-
 // **************************
 // ***** Game functions *****
 // **************************
@@ -195,6 +173,17 @@ function spawn() {
   if (!canPieceSpawn) {
     clearInterval(timer)
     process.exit()
+  }
+}
+
+function canRotate(direction) {
+  //clockwise:
+  if (direction === "cw") {
+    return true
+  }
+  //counterClockwise:
+  else {
+    return true
   }
 }
 
@@ -321,15 +310,46 @@ function rotateClockwise() {
   printBoard()
 }
 
-//Move the failingPiece 1 row down
-function gravity() {
+function rotateCounterClockwise() {
+  rotateClockwise()   // Work smarter,
+  rotateClockwise()   // not harder!
+  rotateClockwise()   // ¯\_(ツ)_/¯
+}
+
+//Check if failingPiece can be moved 1 unit at given direction
+function canMove(direction) {
+
+    return true
+}
+
+//Move the failingPiece 1 unit at given direction
+function move(direction) {
 
   //Save fallingPiece new tiles to aux array
   const newTiles = []
-  fallingPiece.tiles.forEach(e => {
-    const newCoord = [e[0]+1, e[1]]
-    newTiles.push(newCoord)
-  })
+  switch (direction) {
+    
+    case "left":
+      fallingPiece.tiles.forEach(e => {
+        const newCoord = [e[0], e[1]-1]
+        newTiles.push(newCoord)
+      })
+      break
+    
+    case "right":
+      fallingPiece.tiles.forEach(e => {
+        const newCoord = [e[0]+1, e[1]+1]
+        newTiles.push(newCoord)
+      })
+      break
+    
+    case "down":
+      fallingPiece.tiles.forEach(e => {
+        const newCoord = [e[0]+1, e[1]]
+        newTiles.push(newCoord)
+      })
+      break
+  }
 
   //Clear old tiles
   fallingPiece.tiles.forEach(e => {
@@ -346,9 +366,15 @@ function gravity() {
 }
 
 //Read key press
-process.stdin.on("keypress", (char, event) => {
-  if (char === "w") rotateClockwise()
-  if (char === "c") process.exit()        //CTRL + C: stop script
+process.stdin.on("keypress", (char, key) => {
+  switch (key.name) {
+    case "a":     if (canRotate("ccw"))   rotateCounterClockwise(); break;
+    case "d":     if (canRotate("cw"))    rotateClockwise();        break;
+    case "left":  if (canMove("left"))    move("left");             break;
+    case "right": if (canMove("right"))   move("right");            break;
+    case "down":  if (canMove("down"))    move("down");             break;
+    case "c":     if (key.ctrl)           process.exit();           break;  //CTRL + C: stop script
+  }
 })
 
 console.clear()
@@ -359,10 +385,10 @@ spawn()
 
 const timer = setInterval(() => {
 
-  if (isSpaceAvailable(fallingPiece)) {
-    gravity()
+  if (canMove("down")) {
+    move("down")
   } else {     
     spawn()
   }
 
-}, 100)
+}, 1000)
