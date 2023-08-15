@@ -184,15 +184,17 @@ function spawn() {
   const canPieceSpawn = canSpawn(fallingPiece)
 
   //For each tile of the piece, add it on the screen
-  //Improvement opportunity: print just the fallingPiec bottom tiles, instead of overwrite the old piece currently in the spawn zone
+  //Improvement opportunity: print just the fallingPiece bottom tiles, instead of overwrite the old piece currently in the spawn zone
   fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 
   printBoard()
 
+  //Piece was drawn with or without space available. But if it couldn't spawn, it's game over
   if (!canPieceSpawn) {
-    gameOver()
+    clearInterval(timer)
+    process.exit()
   }
 }
 
@@ -215,7 +217,7 @@ function rotateClockwise() {
   //(Pictures of pieces at free-falling, not immediately after spawning. Because of the lack of space, they can't rotate rigth after spawning)
   //For the full example: https://tetris.wiki/Nintendo_Rotation_System
 
-  const c = fallingPiece.tiles
+  const t = fallingPiece.tiles   //old tiles
   const newTiles = []
   
   //Clear old tiles
@@ -228,45 +230,45 @@ function rotateClockwise() {
 
     case 1:   //I tetromino
       if (fallingPiece.orientation % 180 == 0) {
-        newTiles.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]+1], [c[2][0]+1, c[2][1]], [c[3][0]+2, c[3][1]-1])
+        newTiles.push([t[0][0]-1, t[0][1]+2], [t[1][0], t[1][1]+1], [t[2][0]+1, t[2][1]], [t[3][0]+2, t[3][1]-1])
       } else {
-        newTiles.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]-1], [c[2][0]-1, c[2][1]], [c[3][0]-2, c[3][1]+1])
+        newTiles.push([t[0][0]+1, t[0][1]-2], [t[1][0], t[1][1]-1], [t[2][0]-1, t[2][1]], [t[3][0]-2, t[3][1]+1])
       }
       break
     
     case 2:   //O tetromino
-      newTiles.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0], c[3][1]])
+      newTiles.push([t[0][0], t[0][1]], [t[1][0], t[1][1]], [t[2][0], t[2][1]], [t[3][0], t[3][1]])
       break
     
     case 3:   //S tetromino
       if (fallingPiece.orientation % 180 == 0) {
-        newTiles.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]-2, c[2][1]+1], [c[3][0], c[3][1]+1])
+        newTiles.push([t[0][0], t[0][1]], [t[1][0], t[1][1]], [t[2][0]-2, t[2][1]+1], [t[3][0], t[3][1]+1])
       } else {
-        newTiles.push([c[0][0], c[0][1]], [c[1][0], c[1][1]], [c[2][0]+2, c[2][1]-1], [c[3][0], c[3][1]-1])
+        newTiles.push([t[0][0], t[0][1]], [t[1][0], t[1][1]], [t[2][0]+2, t[2][1]-1], [t[3][0], t[3][1]-1])
       }
       break
     
     case 4:   //Z tetromino
       if (fallingPiece.orientation % 180 == 0) {
-        newTiles.push([c[0][0]-1, c[0][1]+2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]-1, c[3][1]])
+        newTiles.push([t[0][0]-1, t[0][1]+2], [t[1][0], t[1][1]], [t[2][0], t[2][1]], [t[3][0]-1, t[3][1]])
       } else {
-        newTiles.push([c[0][0]+1, c[0][1]-2], [c[1][0], c[1][1]], [c[2][0], c[2][1]], [c[3][0]+1, c[3][1]])
+        newTiles.push([t[0][0]+1, t[0][1]-2], [t[1][0], t[1][1]], [t[2][0], t[2][1]], [t[3][0]+1, t[3][1]])
       }
       break
     
     case 5:   //J tetromino
       switch (fallingPiece.orientation / 90 % 4) {
         case 0:
-          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]-2])
+          newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0], t[3][1]-2])
           break
         case 1:
-          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-2, c[3][1]])
+          newTiles.push([t[0][0]+1, t[0][1]-1], [t[1][0], t[1][1]], [t[2][0]-1, t[2][1]+1], [t[3][0]-2, t[3][1]])
           break
         case 2:
-          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0], c[3][1]+2])
+          newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0], t[3][1]+2])
           break
         case 3:
-          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+2, c[3][1]])
+          newTiles.push([t[0][0]+1, t[0][1]-1], [t[1][0], t[1][1]], [t[2][0]-1, t[2][1]+1], [t[3][0]+2, t[3][1]])
           break
       }
       break
@@ -274,16 +276,16 @@ function rotateClockwise() {
     case 6:   //L tetromino
       switch (fallingPiece.orientation / 90 % 4) {
         case 0:
-          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-2, c[3][1]])
+          newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0]-2, t[3][1]])
           break
         case 1:
-          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]+2])
+          newTiles.push([t[0][0]+1, t[0][1]-1], [t[1][0], t[1][1]], [t[2][0]-1, t[2][1]+1], [t[3][0], t[3][1]+2])
           break
         case 2:
-          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+2, c[3][1]])
+          newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0]+2, t[3][1]])
           break
         case 3:
-          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0], c[3][1]-2])
+          newTiles.push([t[0][0]+1, t[0][1]-1], [t[1][0], t[1][1]], [t[2][0]-1, t[2][1]+1], [t[3][0], t[3][1]-2])
           break
       }
       break
@@ -291,16 +293,16 @@ function rotateClockwise() {
     case 7:   //T tetromino
       switch (fallingPiece.orientation / 90 % 4) {
         case 0:
-          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]-1, c[3][1]-1])
+          newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0]-1, t[3][1]-1])
           break
         case 1:
-          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]-1, c[3][1]+1])
+          newTiles.push([t[0][0]+1, t[0][1]-1], [t[1][0], t[1][1]], [t[2][0]-1, t[2][1]+1], [t[3][0]-1, t[3][1]+1])
           break
         case 2:
-          newTiles.push([c[0][0]-1, c[0][1]+1], [c[1][0], c[1][1]], [c[2][0]+1, c[2][1]-1], [c[3][0]+1, c[3][1]+1])
+          newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0]+1, t[3][1]+1])
           break
         case 3:
-          newTiles.push([c[0][0]+1, c[0][1]-1], [c[1][0], c[1][1]], [c[2][0]-1, c[2][1]+1], [c[3][0]+1, c[3][1]-1])
+          newTiles.push([t[0][0]+1, t[0][1]-1], [t[1][0], t[1][1]], [t[2][0]-1, t[2][1]+1], [t[3][0]+1, t[3][1]-1])
           break
       }
       break
@@ -312,7 +314,7 @@ function rotateClockwise() {
     tiles: newTiles, 
     orientation: fallingPiece.orientation + 90
   }
-  newTiles.forEach(e => {
+  fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
 
@@ -334,16 +336,13 @@ function gravity() {
     screen[e[0]][e[1]] = 0
   })
 
-  //Update fallingPiece
+  //Update fallingPiece and screen with new tiles
   fallingPiece.tiles = [...newTiles]
   fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.color
   })
-}
 
-function gameOver() {
-  clearInterval(timer)
-  process.exit()
+  printBoard()
 }
 
 //Read key press
@@ -365,7 +364,5 @@ const timer = setInterval(() => {
   } else {     
     spawn()
   }
-
-  printBoard()
 
 }, 100)
