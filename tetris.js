@@ -35,22 +35,18 @@ const pieces = [
 //Render the game based on the CLI argument (ex: > node tetris.js color)
 const modes = {
   "classic": {
-    tile: "[]",
-    space: " .",
     leftBorder: "<!",
     rigthBorder: "!>",
     bottomBorder: "▽▽",
     primaryColor: green,
-    colors: [green, green, green, green, green, green, green, green]
+    tiles: [" .", "[]", "[]", "[]", "[]", "[]", "[]", "[]"]
   },
   "color": {
-    tile: "██",
-    space: "  ",
     leftBorder: "░░",
     rigthBorder: "░░",
     bottomBorder: "░░",
     primaryColor: white,
-    colors: [white, cyan, yellow, green, red, blue, orange, purple]
+    tiles: [white + "  ", cyan + "██", yellow + "██", green + "██", red + "██", blue + "██", orange + "██", purple + "██"]
   }
 }
 
@@ -134,15 +130,11 @@ function isArrayIn2DArray(oneDimArray, twoDimArray) {
 // **************************
 
 //Print a single tile.
-//If param "color" not mentioned, use mode's default color
-function printTile(tile, color) {
-  if (color === undefined) {
-    color = modes[selectedMode].primaryColor
-  }
+function printTile(tile) {
   process.stdout.write(
-    color +   //start piece color (ex: orange)
-    tile +    //print tile (ex: "██")
-    white     //reset terminal color back to white
+    modes[selectedMode].primaryColor +  //set mode default color (will be overwriten if tile is colored)
+    tile +                              //print tile (ex: "██")
+    white                               //reset terminal color back to white
   )
 }
 
@@ -156,14 +148,7 @@ function printBoard() {
       if (j == 0) {
         printTile(modes[selectedMode].leftBorder)             //left border
       }
-      if (screen[i][j]) {
-        printTile(                                            //piece tile
-          modes[selectedMode].tile,
-          modes[selectedMode].colors[[screen[i][j]]]
-        )
-      } else {
-        printTile(modes[selectedMode].space)                  //empty cell
-      }
+      printTile(modes[selectedMode].tiles[screen[i][j]])      //array has chars from both empty cells and piece tiles
       if (j == SCREEN_WIDTH - 1) {
         printTile(modes[selectedMode].rigthBorder)            //right border
       }
@@ -387,9 +372,9 @@ function canMove(direction) {
   //If any new tile is on the screen, but not empty, piece can't move down;
   newTiles.forEach(e => {
     if (
-      [e[1]] < 0 || 
-      [e[1]] > SCREEN_WIDTH - 1 || 
-      [e[0]] > SCREEN_LENGTH - 1 ||
+      e[1] < 0 || 
+      e[1] > SCREEN_WIDTH - 1 || 
+      e[0] > SCREEN_LENGTH - 1 ||
       screen[e[0]][e[1]]
     ) {
       hasSpace = false
