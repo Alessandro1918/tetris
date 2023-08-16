@@ -191,7 +191,7 @@ function spawn() {
     resetRemaingPieces()
   }
 
-  const canPieceSpawn = canSpawn(fallingPiece)
+  const hasSpace = canSpawn(fallingPiece)
 
   //For each tile of the piece, add it on the screen
   //Improvement opportunity: print just the fallingPiece bottom tiles, instead of overwrite the old piece currently in the spawn zone
@@ -202,24 +202,14 @@ function spawn() {
   printBoard()
 
   //Piece was drawn with or without space available. But if it couldn't spawn, it's game over
-  if (!canPieceSpawn) {
+  if (!hasSpace) {
     clearInterval(timer)
     process.exit()
   }
 }
 
-function canRotate(direction) {
-  //clockwise:
-  if (direction === "cw") {
-    return true
-  }
-  //counterClockwise:
-  else {
-    return true
-  }
-}
-
-function rotateClockwise() {
+//Return which tiles will be occupied after a 90 degree rotation in the clockwise direction
+function tilesAfterRotateCW(piece) {
   //0 degrees:
   //I:            //O:           //S:         //Z:         //J:         //L:         //T:
   // -- -- -- --  //-- -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --  // -- -- --
@@ -238,19 +228,14 @@ function rotateClockwise() {
   //(Pictures of pieces at free-falling, not immediately after spawning. Because of the lack of space, they can't rotate rigth after spawning)
   //For the full example: https://tetris.wiki/Nintendo_Rotation_System
 
-  const t = fallingPiece.tiles   //old tiles
+  const t = piece.tiles   //old tiles
   const newTiles = []
-  
-  //Clear old tiles
-  fallingPiece.tiles.forEach(e => {
-    screen[e[0]][e[1]] = 0
-  })
-  
+
   //Get new tiles
-  switch (fallingPiece.id) {
+  switch (piece.id) {
 
     case 1:   //I tetromino
-      if (fallingPiece.orientation % 180 == 0) {
+      if (piece.orientation % 180 == 0) {
         newTiles.push([t[0][0]-1, t[0][1]+2], [t[1][0], t[1][1]+1], [t[2][0]+1, t[2][1]], [t[3][0]+2, t[3][1]-1])
       } else {
         newTiles.push([t[0][0]+1, t[0][1]-2], [t[1][0], t[1][1]-1], [t[2][0]-1, t[2][1]], [t[3][0]-2, t[3][1]+1])
@@ -262,7 +247,7 @@ function rotateClockwise() {
       break
     
     case 3:   //S tetromino
-      if (fallingPiece.orientation % 180 == 0) {
+      if (piece.orientation % 180 == 0) {
         newTiles.push([t[0][0], t[0][1]], [t[1][0], t[1][1]], [t[2][0]-2, t[2][1]+1], [t[3][0], t[3][1]+1])
       } else {
         newTiles.push([t[0][0], t[0][1]], [t[1][0], t[1][1]], [t[2][0]+2, t[2][1]-1], [t[3][0], t[3][1]-1])
@@ -270,7 +255,7 @@ function rotateClockwise() {
       break
     
     case 4:   //Z tetromino
-      if (fallingPiece.orientation % 180 == 0) {
+      if (piece.orientation % 180 == 0) {
         newTiles.push([t[0][0]-1, t[0][1]+2], [t[1][0], t[1][1]], [t[2][0], t[2][1]], [t[3][0]-1, t[3][1]])
       } else {
         newTiles.push([t[0][0]+1, t[0][1]-2], [t[1][0], t[1][1]], [t[2][0], t[2][1]], [t[3][0]+1, t[3][1]])
@@ -278,7 +263,7 @@ function rotateClockwise() {
       break
     
     case 5:   //J tetromino
-      switch (fallingPiece.orientation / 90 % 4) {
+      switch (piece.orientation / 90 % 4) {
         case 0:
           newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0], t[3][1]-2])
           break
@@ -295,7 +280,7 @@ function rotateClockwise() {
       break
 
     case 6:   //L tetromino
-      switch (fallingPiece.orientation / 90 % 4) {
+      switch (piece.orientation / 90 % 4) {
         case 0:
           newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0]-2, t[3][1]])
           break
@@ -312,7 +297,7 @@ function rotateClockwise() {
       break
 
     case 7:   //T tetromino
-      switch (fallingPiece.orientation / 90 % 4) {
+      switch (piece.orientation / 90 % 4) {
         case 0:
           newTiles.push([t[0][0]-1, t[0][1]+1], [t[1][0], t[1][1]], [t[2][0]+1, t[2][1]-1], [t[3][0]-1, t[3][1]-1])
           break
@@ -329,6 +314,73 @@ function rotateClockwise() {
       break
   }
 
+  return newTiles
+}
+
+//Return which tiles will be occupied after a 90 degree rotation in the counterClockwise direction
+function tilesAfterRotateCCW(piece) {
+  
+  return (
+    tilesAfterRotateCW(             // Work smarter,
+      tilesAfterRotateCW(           //not harder!
+        tilesAfterRotateCW(piece)   //¯\_(ツ)_/¯
+      )
+    )
+  )
+}
+
+function canRotate(direction) {
+  
+  let newTiles = []
+
+  //clockwise:
+  if (direction === "cw") {
+    newTiles = tilesAfterRotateCW(fallingPiece)
+  }
+  //counterClockwise:
+  else {
+    newTiles = tilesAfterRotateCCW(fallingPiece)
+  }
+
+  let hasSpace = true
+
+  newTiles.forEach(e => {
+    //If any new tile is off limits, piece can't rotate;
+    //If any new tile is on the screen, but not empty, piece can't rotate;
+    //If tile is already part of fallingPiece, it should not be counted;
+    if (
+      e[0] < 0 ||
+      e[1] < 0 || 
+      e[0] > SCREEN_LENGTH - 1 ||
+      e[1] > SCREEN_WIDTH - 1 ||
+      screen[e[0]][e[1]] &&
+      !isArrayIn2DArray(e, fallingPiece.tiles)
+    ) {
+      hasSpace = false
+    }
+  })
+
+  return hasSpace
+}
+
+function rotate(direction) {
+
+  let newTiles = []
+
+  //clockwise:
+  if (direction === "cw") {
+    newTiles = tilesAfterRotateCW(fallingPiece)
+  }
+  //counterClockwise:
+  else {
+    newTiles = tilesAfterRotateCCW(fallingPiece)
+  }
+
+  //Clear old tiles
+  fallingPiece.tiles.forEach(e => {
+    screen[e[0]][e[1]] = 0
+  })
+
   //Update fallingPiece and screen with new tiles
   fallingPiece = {
     ...fallingPiece, 
@@ -340,12 +392,6 @@ function rotateClockwise() {
   })
 
   printBoard()
-}
-
-function rotateCounterClockwise() {
-  rotateClockwise()   // Work smarter,
-  rotateClockwise()   // not harder!
-  rotateClockwise()   // ¯\_(ツ)_/¯
 }
 
 //Check if failingPiece can be moved 1 unit at given direction
@@ -427,13 +473,13 @@ function move(direction) {
 //Read key press
 process.stdin.on("keypress", (char, key) => {
   switch (key.name) {
-    case "a":     if (canRotate("ccw"))   rotateCounterClockwise(); break;
-    case "d":     if (canRotate("cw"))    rotateClockwise();        break;
-    case "up":    if (canRotate("cw"))    rotateClockwise();        break;
-    case "left":  if (canMove("left"))    move("left");             break;
-    case "right": if (canMove("right"))   move("right");            break;
-    case "down":  if (canMove("down"))    move("down");             break;
-    case "c":     if (key.ctrl)           process.exit();           break;  //CTRL + C: stop script
+    case "a":     if (canRotate("ccw"))   rotate("ccw");    break;
+    case "d":     if (canRotate("cw"))    rotate("cw");     break;
+    case "up":    if (canRotate("cw"))    rotate("cw");     break;
+    case "left":  if (canMove("left"))    move("left");     break;
+    case "right": if (canMove("right"))   move("right");    break;
+    case "down":  if (canMove("down"))    move("down");     break;
+    case "c":     if (key.ctrl)           process.exit();   break;  //CTRL + C: stop script
   }
 })
 
