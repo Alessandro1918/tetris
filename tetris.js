@@ -399,7 +399,7 @@ function move(direction) {
     
     case "right":
       fallingPiece.tiles.forEach(e => {
-        newTiles.push([e[0]+1, e[1]+1])
+        newTiles.push([e[0], e[1]+1])
       })
       break
     
