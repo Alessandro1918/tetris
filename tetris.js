@@ -376,7 +376,7 @@ function rotate(direction) {
     newTiles = tilesAfterRotateCCW(fallingPiece)
   }
 
-  //Clear old tiles
+  //Clear screen from old tiles
   fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = 0
   })
@@ -394,34 +394,42 @@ function rotate(direction) {
   printBoard()
 }
 
-//Check if failingPiece can be moved 1 unit at given direction
-function canMove(direction) {
+//Return which tiles will be occupied after a move in the given direction
+function tilesAfterMove(piece, direction) {
 
-  //Get every tile on the left of / on the rigth of / below each failingPiece tile,
-  //not counting tiles from the belonging to failingPiece
   const newTiles = []
-  fallingPiece.tiles.forEach(e => {
+
+  piece.tiles.forEach(e => {
     let tile = []
     switch (direction) {
       case "left":  tile = [e[0], e[1]-1]; break;
       case "right": tile = [e[0], e[1]+1]; break;
       case "down":  tile = [e[0]+1, e[1]]; break;
     }
-    if (!isArrayIn2DArray(tile, fallingPiece.tiles)) {
-      newTiles.push(tile)
-    }
+    newTiles.push(tile)
   })
+
+  return newTiles
+}
+
+//Check if failingPiece can be moved 1 unit at given direction
+function canMove(direction) {
+
+  newTiles = tilesAfterMove(fallingPiece, direction)
 
   let hasSpace = true
 
   //If any new tile is off limits, piece can't move;
-  //If any new tile is on the screen, but not empty, piece can't move down;
+  //If any new tile is on the screen, but not empty, piece can't move;
+  //If tile is already part of fallingPiece, it should not be counted;
   newTiles.forEach(e => {
     if (
+      // e[0] < 0 ||
       e[1] < 0 || 
-      e[1] > SCREEN_WIDTH - 1 || 
       e[0] > SCREEN_LENGTH - 1 ||
-      screen[e[0]][e[1]]
+      e[1] > SCREEN_WIDTH - 1 ||
+      screen[e[0]][e[1]] &&
+      !isArrayIn2DArray(e, fallingPiece.tiles)
     ) {
       hasSpace = false
     }
@@ -433,30 +441,9 @@ function canMove(direction) {
 //Move the failingPiece 1 unit at given direction
 function move(direction) {
 
-  //Save fallingPiece new tiles to aux array
-  const newTiles = []
-  switch (direction) {
-    
-    case "left":
-      fallingPiece.tiles.forEach(e => {
-        newTiles.push([e[0], e[1]-1])
-      })
-      break
-    
-    case "right":
-      fallingPiece.tiles.forEach(e => {
-        newTiles.push([e[0], e[1]+1])
-      })
-      break
-    
-    case "down":
-      fallingPiece.tiles.forEach(e => {
-        newTiles.push([e[0]+1, e[1]])
-      })
-      break
-  }
+  newTiles = tilesAfterMove(fallingPiece, direction)
 
-  //Clear old tiles
+  //Clear screen from old tiles
   fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = 0
   })
