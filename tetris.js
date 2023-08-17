@@ -16,7 +16,7 @@ const blue =   "\x1b[34m"
 const purple = "\x1b[35m"
 const cyan =   "\x1b[36m"
 const orange = "\033[38;5;214m"
-const blackOnWhite = "\033[38;5;0;48;5;15m" //https://i.stack.imgur.com/KTSQa.png
+const blackOnYellow = "\033[38;5;0;48;5;142m" //https://i.stack.imgur.com/KTSQa.png
 
 //id: unique identifier; can be used to define the color in the "colors" array.
 //tiles: array of [X, Y] coordinates of each tile of the piece on the screen. [0, 0] is "screen top-left", [0, MAX] is "screen top-right", etc.
@@ -36,17 +36,24 @@ const pieces = [
 //Render the game based on the CLI argument (ex: > node tetris.js color)
 const modes = {
   "classic": {
+    color: green,
     leftBorder: "<!",
     rigthBorder: "!>",
     bottomBorder: "▽▽",
-    primaryColor: green,
     tiles: [" .", "[]", "[]", "[]", "[]", "[]", "[]", "[]"]
   },
+  "gameboy": {
+    color: blackOnYellow,
+    leftBorder: "ᢂᢂ",
+    rigthBorder: "ᢂᢂ",
+    bottomBorder: "ᢂᢂ",
+    tiles: ["  ", "🀑🀑", "🀓🀓", "🁫🁫", "🁳🁳", "🂣🂣", "🂢🂢", "🂡🂡"]
+  },
   "color": {
+    color: white,
     leftBorder: "░░",
     rigthBorder: "░░",
     bottomBorder: "░░",
-    primaryColor: white,
     tiles: [white + "  ", cyan + "██", yellow + "██", green + "██", red + "██", blue + "██", orange + "██", purple + "██"]
   }
 }
@@ -139,7 +146,7 @@ function shuffleArray(array) {
 //Print a single tile.
 function printTile(tile) {
   process.stdout.write(
-    modes[selectedMode].primaryColor +  //set mode default color (will be overwriten if tile is colored)
+    modes[selectedMode].color +         //set mode default color (will be overwriten if tile is colored)
     tile +                              //print tile (ex: "██")
     white                               //reset terminal color back to white
   )
@@ -167,9 +174,19 @@ function printBoard() {
   }
   process.stdout.write("\n")
 
-  process.stdout.write("Next: " + blackOnWhite + pieces[remainingPieces[0]].name + white + "\n")
+  process.stdout.write(
+    modes[selectedMode].color + "Next: " + 
+    pieces[remainingPieces[0]].name + 
+    "".padEnd(2 * SCREEN_WIDTH + 4 - "Next: T".length, "  ") +    //+4: borders length
+    white + "\n"
+  )
 
-  process.stdout.write("Score: " + green + score + white + "\n")
+  process.stdout.write(
+    modes[selectedMode].color + "Score: " + 
+    score + 
+    "".padEnd(2 * SCREEN_WIDTH + 4 - `Score: ${score}`.length, "  ") + 
+    white + "\n"
+  )
 }
 
 //Check if piece has screen space to spawn.
@@ -326,7 +343,6 @@ function tilesAfterRotateCW(piece) {
 
 //Return which tiles will be occupied after a 90 degree rotation in the counterClockwise direction
 function tilesAfterRotateCCW(piece) {
-  
   return (
     tilesAfterRotateCW(             // Work smarter,
       tilesAfterRotateCW(           //not harder!
@@ -464,7 +480,7 @@ function move(direction) {
   printBoard()
 }
 
-//Return an array of line indexes of completed rows ([], or [19], or [14, 15]), ordered by "top row first".
+//Return an array of indexes of completed rows (ex:[], or [19], or [14, 15]), ordered by "top row first".
 function completedRows() {
 
   const lines =[]
