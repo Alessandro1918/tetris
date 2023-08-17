@@ -457,6 +457,59 @@ function move(direction) {
   printBoard()
 }
 
+//Return an array of line indexes of completed rows ([], or [19], or [14, 15]), ordered by "top row first".
+function completedRows() {
+
+  const lines =[]
+
+  for (var i = 0; i < SCREEN_LENGTH; i++) {     //i: row counter
+    let isCompleted = true
+    for (var j = 0; j < SCREEN_WIDTH; j++) {    //j: column counter
+      if (!screen[i][j]) {
+        isCompleted = false
+      }
+    }
+    if (isCompleted) {
+      lines.push(i)
+    }
+  }
+
+  return lines
+}
+
+//Clear all completed rows.
+//Drops every tile above the cleared lines one row down.
+function clearRows(rows) {
+
+  for (var i = 0; i < SCREEN_LENGTH; i++) {     //i: row counter
+    for (var j = 0; j < SCREEN_WIDTH; j++) {    //j: column counter
+      if (rows.includes(i)) {
+        screen[i][j] = 0
+        printBoard()
+      }
+    }
+  }
+
+  let tempScreen = [...screen]
+  for (var i = SCREEN_LENGTH - 1; i > - 1; i--) {   //bottom to top
+    for (var j = 0; j < SCREEN_WIDTH; j++) {
+      if (
+        i < Math.min(...rows)                       //is above a cleared row
+      ) {
+        tempScreen[i + rows.length][j] = screen[i][j]
+      }
+    }
+  }
+
+  for (var i = 0; i < SCREEN_LENGTH; i++) {
+    for (var j = 0; j < SCREEN_WIDTH; j++) {
+      screen[i][j] = tempScreen[i][j]
+    }
+  }
+
+  printBoard()
+}
+
 //Read key press
 process.stdin.on("keypress", (char, key) => {
   switch (key.name) {
@@ -472,9 +525,11 @@ process.stdin.on("keypress", (char, key) => {
 
 // ***** Start! *****
 
-process.argv.length == 2
-  ? selectedMode = "classic"        //no arg provided, use default
-  : selectedMode = process.argv[2]  //use param provided by CLI
+if (process.argv.length == 2) {
+  selectedMode = "classic"        //no arg provided, use default
+} else {
+  selectedMode = process.argv[2]  //use param provided by CLI
+}
 
 console.clear()
 
@@ -486,8 +541,12 @@ const timer = setInterval(() => {
 
   if (canMove("down")) {
     move("down")
-  } else {     
+  } else {    
+    const rows = completedRows() 
+    if (rows.length > 0) {
+      clearRows(rows)
+    }
     spawn()
   }
 
-}, 1000)
+}, 1000)  //ms
