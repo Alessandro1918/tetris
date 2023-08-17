@@ -15,7 +15,8 @@ const yellow = "\x1b[33m"
 const blue =   "\x1b[34m"
 const purple = "\x1b[35m"
 const cyan =   "\x1b[36m"
-const orange = white        //ANSI sequences don't support "orange"
+const orange = "\033[38;5;214m"
+const blackOnWhite = "\033[38;5;0;48;5;15m" //https://i.stack.imgur.com/KTSQa.png
 
 //id: unique identifier; can be used to define the color in the "colors" array.
 //tiles: array of [X, Y] coordinates of each tile of the piece on the screen. [0, 0] is "screen top-left", [0, MAX] is "screen top-right", etc.
@@ -23,13 +24,13 @@ const orange = white        //ANSI sequences don't support "orange"
 //Tetrominoes spawn with their highest block on row 20, axis of rotation on column 6: https://tetris.wiki/Original_Rotation_System
 const pieces = [
   {},                                                                //Empty space (white)
-  {id: 1, tiles: [[0, 3], [0, 4], [0, 5], [0, 6]], orientation: 0},  //I tetromino (cyan)
-  {id: 2, tiles: [[0, 4], [0, 5], [1, 4], [1, 5]], orientation: 0},  //O tetromino (yellow)
-  {id: 3, tiles: [[0, 5], [0, 6], [1, 4], [1, 5]], orientation: 0},  //S tetromino (green)
-  {id: 4, tiles: [[0, 4], [0, 5], [1, 5], [1, 6]], orientation: 0},  //Z tetromino (red)
-  {id: 5, tiles: [[0, 4], [0, 5], [0, 6], [1, 6]], orientation: 0},  //J tetromino (blue)
-  {id: 6, tiles: [[0, 4], [0, 5], [0, 6], [1, 4]], orientation: 0},  //L tetromino (orange)
-  {id: 7, tiles: [[0, 4], [0, 5], [0, 6], [1, 5]], orientation: 0},  //T tetromino (purple)
+  {id: 1, name: "I", tiles: [[0, 3], [0, 4], [0, 5], [0, 6]], orientation: 0},  //I tetromino (cyan)
+  {id: 2, name: "O", tiles: [[0, 4], [0, 5], [1, 4], [1, 5]], orientation: 0},  //O tetromino (yellow)
+  {id: 3, name: "S", tiles: [[0, 5], [0, 6], [1, 4], [1, 5]], orientation: 0},  //S tetromino (green)
+  {id: 4, name: "Z", tiles: [[0, 4], [0, 5], [1, 5], [1, 6]], orientation: 0},  //Z tetromino (red)
+  {id: 5, name: "J", tiles: [[0, 4], [0, 5], [0, 6], [1, 6]], orientation: 0},  //J tetromino (blue)
+  {id: 6, name: "L", tiles: [[0, 4], [0, 5], [0, 6], [1, 4]], orientation: 0},  //L tetromino (orange)
+  {id: 7, name: "T", tiles: [[0, 4], [0, 5], [0, 6], [1, 5]], orientation: 0},  //T tetromino (purple)
 ]
 
 //Render the game based on the CLI argument (ex: > node tetris.js color)
@@ -55,6 +56,7 @@ const modes = {
 let remainingPieces = []
 function resetRemaingPieces() {
   remainingPieces = [1, 2, 3, 4, 5, 6, 7]
+  shuffleArray(remainingPieces)
 }
 resetRemaingPieces()
 
@@ -102,15 +104,6 @@ for (var i = 0; i < SCREEN_LENGTH; i++) {
 // ***** Auxiliar functions *****
 // ******************************
 
-//Get a random integer between two values
-//The maximum is exclusive and the minimum is inclusive
-function getRandomInt() {
-  min = 1
-  max = pieces.length +1
-  // return 0
-  return Math.floor(Math.random() * (max - min) + min)
-}
-
 //Finds an 1D array ([0, 0]) in a 2D array ([[0, 0], [1, 1]])
 function isArrayIn2DArray(oneDimArray, twoDimArray) {
   let isInArray = false
@@ -123,6 +116,16 @@ function isArrayIn2DArray(oneDimArray, twoDimArray) {
     }
   })
   return isInArray
+}
+
+//Randomize array in-place using Durstenfeld shuffle algorithm
+function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1))
+    var temp = array[i]
+    array[i] = array[j]
+    array[j] = temp
+  }
 }
 
 // **************************
@@ -140,7 +143,7 @@ function printTile(tile) {
 
 //Print the board, tile by tile.
 function printBoard() {
-  process.stdout.moveCursor(0, -(SCREEN_LENGTH + 1))          //moves cursor up "n" lines
+  process.stdout.moveCursor(0, -(SCREEN_LENGTH + 2))          //moves cursor up "n" lines (+1 from the bottom border, +1 for the "Next piece:" line)
   process.stdout.clearLine(1)                                 //clear from cursor to end
   
   for (var i = 0; i < SCREEN_LENGTH; i++) {                   //i: row counter
@@ -159,6 +162,8 @@ function printBoard() {
     printTile(modes[selectedMode].bottomBorder)               //bottom border
   }
   process.stdout.write("\n")
+
+  process.stdout.write("Next: " + blackOnWhite + pieces[remainingPieces[0]].name + white + "\n")
 }
 
 //Check if piece has screen space to spawn.
@@ -177,16 +182,12 @@ function canSpawn(piece) {
 function spawn() {
 
   //Sort a new piece from the pool of remaining pieces
-  let pieceId = 9   // a piece that doesn't exist
-  while (remainingPieces.indexOf(pieceId) < 0) {
-    pieceId = getRandomInt()
-  }
-  // fallingPiece = pieces[pieceId]        //shallow copy
-  fallingPiece = {...pieces[pieceId]}      //deep copy
+  pieceId = remainingPieces[0]
+  // fallingPiece = pieces[pieceId]           //shallow copy
+  fallingPiece = {...pieces[pieceId]}         //deep copy
 
   //Remove piece from the pool of remaining pieces
-  const filtered = remainingPieces.filter(e => e != pieceId)
-  remainingPieces = [...filtered]
+  remainingPieces = remainingPieces.slice(1)  //from [1] to [length-1]
   if (remainingPieces.length == 0) {
     resetRemaingPieces()
   }
