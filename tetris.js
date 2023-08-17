@@ -69,6 +69,8 @@ let fallingPiece = {
 
 let score = 0
 
+let speed = 1000  //ms
+
 //Init screen
 // const screen = [
 //   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -123,8 +125,8 @@ function isArrayIn2DArray(oneDimArray, twoDimArray) {
 //Randomize array in-place using Durstenfeld shuffle algorithm
 function shuffleArray(array) {
   for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1))
-    var temp = array[i]
+    let j = Math.floor(Math.random() * (i + 1))
+    let temp = array[i]
     array[i] = array[j]
     array[j] = temp
   }
@@ -486,6 +488,7 @@ function completedRows() {
 //Drops every tile above the cleared lines one row down.
 function clearRows(rows) {
 
+  //Clear rows
   for (var i = 0; i < SCREEN_LENGTH; i++) {     //i: row counter
     for (var j = 0; j < SCREEN_WIDTH; j++) {    //j: column counter
       if (rows.includes(i)) {
@@ -495,25 +498,35 @@ function clearRows(rows) {
     }
   }
 
+  //Copy every row above clearedRows to a temp var "n" row below
   let tempScreen = [...screen]
   for (var i = SCREEN_LENGTH - 1; i > - 1; i--) {   //bottom to top
     for (var j = 0; j < SCREEN_WIDTH; j++) {
       if (
-        i < Math.min(...rows)                       //is above a cleared row
+        i < Math.min(...rows)                       //row is above a cleared row
       ) {
         tempScreen[i + rows.length][j] = screen[i][j]
       }
     }
   }
 
+  //Update screen
   for (var i = 0; i < SCREEN_LENGTH; i++) {
     for (var j = 0; j < SCREEN_WIDTH; j++) {
       screen[i][j] = tempScreen[i][j]
     }
   }
 
+  //Update score
   score = score + 1
 
+  //Update speed
+  clearInterval(timer)
+  speed = speed - 25
+  timer = setInterval(() => {
+    loop()
+  }, speed)  //ms
+  
   printBoard()
 }
 
@@ -544,9 +557,8 @@ printBoard()
 
 spawn()
 
-const timer = setInterval(() => {
-
-  if (canMove("down")) {
+function loop() {
+    if (canMove("down")) {
     move("down")
   } else {    
     const rows = completedRows() 
@@ -555,5 +567,8 @@ const timer = setInterval(() => {
     }
     spawn()
   }
+}
 
-}, 1000)  //ms
+let timer = setInterval(() => {
+  loop()
+}, speed)  //ms
