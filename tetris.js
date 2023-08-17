@@ -67,6 +67,8 @@ let fallingPiece = {
   orientation: 0
 }
 
+let score = 0
+
 //Init screen
 // const screen = [
 //   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -143,7 +145,7 @@ function printTile(tile) {
 
 //Print the board, tile by tile.
 function printBoard() {
-  process.stdout.moveCursor(0, -(SCREEN_LENGTH + 2))          //moves cursor up "n" lines (+1 from the bottom border, +1 for the "Next piece:" line)
+  process.stdout.moveCursor(0, -(SCREEN_LENGTH + 3))          //moves cursor up "n" lines (+1 from the bottom border, +1 for the "Next piece:" line, +1 for the score)
   process.stdout.clearLine(1)                                 //clear from cursor to end
   
   for (var i = 0; i < SCREEN_LENGTH; i++) {                   //i: row counter
@@ -164,6 +166,8 @@ function printBoard() {
   process.stdout.write("\n")
 
   process.stdout.write("Next: " + blackOnWhite + pieces[remainingPieces[0]].name + white + "\n")
+
+  process.stdout.write("Score: " + green + score + white + "\n")
 }
 
 //Check if piece has screen space to spawn.
@@ -507,6 +511,8 @@ function clearRows(rows) {
       screen[i][j] = tempScreen[i][j]
     }
   }
+
+  score = score + 1
 
   printBoard()
 }
