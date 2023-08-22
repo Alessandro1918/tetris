@@ -4,9 +4,14 @@
 ![](https://sloc.xyz/github/Alessandro1918/tetris?category=code)
 ![](https://sloc.xyz/github/Alessandro1918/tetris?category=comments)
 -->
+<!--
 ![](https://tokei.rs/b1/github/Alessandro1918/tetris)
 ![](https://tokei.rs/b1/github/Alessandro1918/tetris?category=code)
 ![](https://tokei.rs/b1/github/Alessandro1918/tetris?category=comments)
+-->
+![](https://img.shields.io/badge/dynamic/json?label=Total%20lines&query=$[?(@.language==%22JavaScript%22)].lines&url=https://api.codetabs.com/v1/loc/?github=Alessandro1918/tetris)
+![](https://img.shields.io/badge/dynamic/json?label=Lines%20of%20Code&query=$[?(@.language==%22JavaScript%22)].linesOfCode&url=https://api.codetabs.com/v1/loc/?github=Alessandro1918/tetris)
+![](https://img.shields.io/badge/dynamic/json?label=Comments&query=$[?(@.language==%22JavaScript%22)].comments&url=https://api.codetabs.com/v1/loc/?github=Alessandro1918/tetris)
 
 ## 🚀 Projeto
 
