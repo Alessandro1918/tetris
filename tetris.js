@@ -534,11 +534,11 @@ function clearRows(rows) {
   }
 
   //Update score
-  score = score + 1
+  score = score + rows.length
 
   //Update speed
   clearInterval(timer)
-  speed = speed - 25
+  speed = speed - 45
   timer = setInterval(() => {
     loop()
   }, speed)  //ms
