@@ -540,7 +540,7 @@ function clearRows(rows) {
 
   //Update speed
   clearInterval(timer)
-  speed = speed - 45
+  speed = speed - 40
   timer = setInterval(() => {
     loop()
   }, speed)  //ms
@@ -570,13 +570,20 @@ function pauseResume() {
 //Read key press
 process.stdin.on("keypress", (char, key) => {
   switch (key.name) {
-    case "a":     if (canRotate("ccw"))   rotate("ccw");    break;
-    case "d":     if (canRotate("cw"))    rotate("cw");     break;
-    case "up":    if (canRotate("cw"))    rotate("cw");     break;
+    //Right-handed player:
     case "left":  if (canMove("left"))    move("left");     break;
     case "right": if (canMove("right"))   move("right");    break;
     case "down":  if (canMove("down"))    move("down");     break;
-    case "p":     pauseResume();     break;
+    case "up":    if (canRotate("cw"))    rotate("cw");     break;
+
+    //Left-handed player:
+    case "a":     if (canMove("left"))    move("left");     break;
+    case "d":     if (canMove("right"))   move("right");    break;
+    case "s":     if (canMove("down"))    move("down");     break;
+    case "w":     if (canRotate("ccw"))   rotate("ccw");    break;
+ 
+    //Other controls:
+    case "p":     pauseResume();          break;
     case "c":     if (key.ctrl)           process.exit();   break;  //CTRL + C: stop script
   }
 })

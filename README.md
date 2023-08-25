@@ -59,8 +59,14 @@ Personalize o jogo de acordo com sua plataforma favorita!
   [→]: Move para direita
   [↓]: Move para baixo
   [↑]: Rotaciona sentido horário (↻)
-  [D]: Rotaciona sentido horário (↻)
-  [A]: Rotaciona sentido anti-horário (↺)
+  # Ou:
+  [A]: Move para esquerda
+  [D]: Move para direita
+  [S]: Move para baixo
+  [W]: Rotaciona sentido anti-horário (↺)
+
+  # Outros controles:
+  [P]: Pausa / continua o jogo
   CTRL + C: Finaliza o jogo
 ```
 
