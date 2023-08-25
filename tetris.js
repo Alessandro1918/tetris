@@ -78,6 +78,8 @@ let score = 0
 
 let speed = 1000  //ms
 
+let isPaused = false
+
 //Init screen
 // const screen = [
 //   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -534,11 +536,11 @@ function clearRows(rows) {
   }
 
   //Update score
-  score = score + 1
+  score = score + rows.length
 
   //Update speed
   clearInterval(timer)
-  speed = speed - 25
+  speed = speed - 40
   timer = setInterval(() => {
     loop()
   }, speed)  //ms
@@ -546,15 +548,42 @@ function clearRows(rows) {
   printBoard()
 }
 
+//Pauses / resumes the game
+function pauseResume() {
+  isPaused = !isPaused
+  if (isPaused) {
+    process.stdout.write(
+      modes[selectedMode].color + 
+      "PAUSED - Hit [P]        " + "\n" + 
+      "again to resume         " + 
+      white + "\n"
+    )
+  } else {
+    //Clear this last 2 lines
+    process.stdout.moveCursor(0, -1)    //moves cursor up "n" lines
+    process.stdout.clearLine(1)         //clear from cursor to end
+    process.stdout.moveCursor(0, -1)
+    process.stdout.clearLine(1)
+  }
+}
+
 //Read key press
 process.stdin.on("keypress", (char, key) => {
   switch (key.name) {
-    case "a":     if (canRotate("ccw"))   rotate("ccw");    break;
-    case "d":     if (canRotate("cw"))    rotate("cw");     break;
-    case "up":    if (canRotate("cw"))    rotate("cw");     break;
+    //Right-handed player:
     case "left":  if (canMove("left"))    move("left");     break;
     case "right": if (canMove("right"))   move("right");    break;
     case "down":  if (canMove("down"))    move("down");     break;
+    case "up":    if (canRotate("cw"))    rotate("cw");     break;
+
+    //Left-handed player:
+    case "a":     if (canMove("left"))    move("left");     break;
+    case "d":     if (canMove("right"))   move("right");    break;
+    case "s":     if (canMove("down"))    move("down");     break;
+    case "w":     if (canRotate("ccw"))   rotate("ccw");    break;
+ 
+    //Other controls:
+    case "p":     pauseResume();          break;
     case "c":     if (key.ctrl)           process.exit();   break;  //CTRL + C: stop script
   }
 })
@@ -574,7 +603,10 @@ printBoard()
 spawn()
 
 function loop() {
-    if (canMove("down")) {
+  if (isPaused) {
+    return
+  }
+  if (canMove("down")) {
     move("down")
   } else {    
     const rows = completedRows() 
