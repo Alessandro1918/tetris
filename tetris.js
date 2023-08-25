@@ -78,6 +78,8 @@ let score = 0
 
 let speed = 1000  //ms
 
+let isPaused = false
+
 //Init screen
 // const screen = [
 //   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -546,6 +548,25 @@ function clearRows(rows) {
   printBoard()
 }
 
+//Pauses / resumes the game
+function pauseResume() {
+  isPaused = !isPaused
+  if (isPaused) {
+    process.stdout.write(
+      modes[selectedMode].color + 
+      "PAUSED - Hit [P]        " + "\n" + 
+      "again to resume         " + 
+      white + "\n"
+    )
+  } else {
+    //Clear this last 2 lines
+    process.stdout.moveCursor(0, -1)    //moves cursor up "n" lines
+    process.stdout.clearLine(1)         //clear from cursor to end
+    process.stdout.moveCursor(0, -1)
+    process.stdout.clearLine(1)
+  }
+}
+
 //Read key press
 process.stdin.on("keypress", (char, key) => {
   switch (key.name) {
@@ -555,6 +576,7 @@ process.stdin.on("keypress", (char, key) => {
     case "left":  if (canMove("left"))    move("left");     break;
     case "right": if (canMove("right"))   move("right");    break;
     case "down":  if (canMove("down"))    move("down");     break;
+    case "p":     pauseResume();     break;
     case "c":     if (key.ctrl)           process.exit();   break;  //CTRL + C: stop script
   }
 })
@@ -574,7 +596,10 @@ printBoard()
 spawn()
 
 function loop() {
-    if (canMove("down")) {
+  if (isPaused) {
+    return
+  }
+  if (canMove("down")) {
     move("down")
   } else {    
     const rows = completedRows() 
