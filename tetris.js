@@ -345,13 +345,11 @@ function tilesAfterRotateCW(piece) {
 
 //Return which tiles will be occupied after a 90 degree rotation in the counterClockwise direction
 function tilesAfterRotateCCW(piece) {
-  return (
-    tilesAfterRotateCW(             // Work smarter,
-      tilesAfterRotateCW(           //not harder!
-        tilesAfterRotateCW(piece)   //¯\_(ツ)_/¯
-      )
-    )
-  )
+  let auxPiece = {...piece}
+  auxPiece = {...auxPiece, tiles: tilesAfterRotateCW(auxPiece), orientation: auxPiece.orientation + 90}   // Work smarter,
+  auxPiece = {...auxPiece, tiles: tilesAfterRotateCW(auxPiece), orientation: auxPiece.orientation + 90}   //not harder!
+  auxPiece = {...auxPiece, tiles: tilesAfterRotateCW(auxPiece), orientation: auxPiece.orientation + 90}   //¯\_(ツ)_/¯
+  return auxPiece.tiles
 }
 
 function canRotate(direction) {
@@ -410,7 +408,9 @@ function rotate(direction) {
   fallingPiece = {
     ...fallingPiece, 
     tiles: newTiles, 
-    orientation: fallingPiece.orientation + 90
+    orientation: direction === "cw" 
+      ? fallingPiece.orientation + 90
+      : fallingPiece.orientation + 270
   }
   fallingPiece.tiles.forEach(e => {
     screen[e[0]][e[1]] = fallingPiece.id
